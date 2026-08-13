@@ -1,0 +1,97 @@
+{
+  "_readme": "محتوى المسار القانوني. ملف بيانات بلا كود. كل رقم هنا مأخوذ من موقع رسمي، والمصادر مذكورة في sources. لإضافة دولة: انسخي الملف باسم legal-XX.json وغيّري data-legal في first-hour.html.",
+
+  "country": {
+    "code": "OM",
+    "ar": "سلطنة عُمان",
+    "en": "Sultanate of Oman"
+  },
+  "status": "verified",
+  "lastReviewed": "2026-08-10",
+
+  "sections": [
+    {
+      "title": {
+        "ar": "الجهة المختصة بتلقي بلاغات الابتزاز الإلكتروني",
+        "en": "The authority that receives electronic blackmail reports"
+      },
+      "body": {
+        "ar": "شرطة عُمان السلطانية خصّصت رقمًا مباشرًا لبلاغات الابتزاز والاحتيال الإلكتروني. اتصلي به، أو توجّهي إلى أقرب مركز شرطة، فمراكز الشرطة تعمل على مدار الساعة. البلاغ يُعامَل بسرّية.",
+        "en": "The Royal Oman Police operates a direct line for electronic blackmail and fraud reports. Call it, or go to the nearest police station; stations operate around the clock. Reports are handled confidentially."
+      },
+      "contacts": [
+        {
+          "label": { "ar": "بلاغات الابتزاز والجرائم الإلكترونية", "en": "Blackmail and cybercrime reports" },
+          "value": "80077444",
+          "type": "tel",
+          "primary": true
+        },
+        {
+          "label": { "ar": "الطوارئ", "en": "Emergency" },
+          "value": "9999",
+          "type": "tel"
+        },
+        {
+          "label": { "ar": "بريد شرطة عُمان السلطانية", "en": "Royal Oman Police email" },
+          "value": "info@rop.gov.om",
+          "type": "mailto"
+        }
+      ]
+    },
+    {
+      "title": {
+        "ar": "المركز الوطني للسلامة المعلوماتية",
+        "en": "National Computer Emergency Readiness Team"
+      },
+      "body": {
+        "ar": "للحوادث السيبرانية مثل اختراق حساب أو تسريب بيانات. إن كان الابتزاز مصحوبًا باختراق حسابك، يفيد إبلاغهم إلى جانب بلاغ الشرطة.",
+        "en": "For cyber incidents such as a hacked account or a data leak. If the blackmail came with a compromise of your account, reporting here alongside the police report helps."
+      },
+      "contacts": [
+        {
+          "label": { "ar": "الخط الساخن", "en": "Hotline" },
+          "value": "+968 24685000",
+          "type": "tel"
+        },
+        {
+          "label": { "ar": "البريد الإلكتروني", "en": "Email" },
+          "value": "cert@mtcit.gov.om",
+          "type": "mailto"
+        }
+      ]
+    },
+    {
+      "title": {
+        "ar": "ماذا تأخذين معك عند التبليغ",
+        "en": "What to bring when you report"
+      },
+      "body": {
+        "ar": "حزمة الأدلة التي أنشأتِها هنا، محفوظة على هاتفك أو على ذاكرة خارجية. وهاتفك نفسه إن أمكن، دون حذف أي شيء منه. واسم الحساب أو الرقم الذي وصلك منه التهديد كما ظهر لك تمامًا. لا تحذفي المحادثة قبل التبليغ.",
+        "en": "The evidence package you created here, saved on your phone or an external drive. Your phone itself if possible, with nothing deleted from it. And the account name or number the threat came from, exactly as it appeared. Do not delete the conversation before reporting."
+      }
+    },
+    {
+      "title": {
+        "ar": "تنبيه مهم",
+        "en": "An important note"
+      },
+      "body": {
+        "ar": "أثر ليست جهة رسمية ولا مكتب محاماة، والمعلومات هنا للاسترشاد فقط، مأخوذة من المواقع الرسمية بتاريخ المراجعة المذكور أدناه. الأرقام قد تتغيّر، فتحققي منها من المصدر الرسمي. أما التكييف القانوني لحالتك فمن اختصاص الجهات المختصة وحدها.",
+        "en": "Athar is not an official body and not a law firm. This information is for guidance only and was taken from official websites on the review date shown below. Numbers can change, so verify them at the official source. The legal assessment of your case rests solely with the competent authorities."
+      }
+    }
+  ],
+
+  "sources": [
+    {
+      "label": { "ar": "شرطة عُمان السلطانية · اتصل بنا", "en": "Royal Oman Police · Contact us" },
+      "url": "https://www.rop.gov.om/arabic/contactus.aspx",
+      "checkedOn": "2026-08-10"
+    },
+    {
+      "label": { "ar": "المركز الوطني للسلامة المعلوماتية · تواصل معنا", "en": "Oman National CERT · Contact" },
+      "url": "https://www.cert.gov.om/services/contact",
+      "checkedOn": "2026-08-10"
+    }
+  ]
+}

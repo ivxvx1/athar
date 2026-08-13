@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 420" width="520" height="420" role="img" aria-label="ملف يتحول إلى بصمة رقمية داخل المتصفح">
+  <defs>
+    <linearGradient id="hg1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7CBFC0"/><stop offset="1" stop-color="#64ADB1"/>
+    </linearGradient>
+    <linearGradient id="hg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2B961"/><stop offset="1" stop-color="#E8A649"/>
+    </linearGradient>
+    <linearGradient id="hg3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#EAF5F5"/>
+    </linearGradient>
+    <filter id="hs" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#22333B" flood-opacity=".13"/>
+    </filter>
+  </defs>
+
+  <!-- كتل خلفية ناعمة -->
+  <circle cx="430" cy="80" r="70" fill="#64ADB1" opacity=".13"/>
+  <circle cx="70" cy="330" r="54" fill="#E8A649" opacity=".16"/>
+  <circle cx="480" cy="330" r="30" fill="#7C6BD6" opacity=".13"/>
+
+  <!-- نافذة المتصفح: كل شيء يحدث هنا، داخل الجهاز -->
+  <g filter="url(#hs)">
+    <rect x="60" y="52" width="400" height="300" rx="18" fill="url(#hg3)"/>
+    <rect x="60" y="52" width="400" height="40" rx="18" fill="url(#hg1)"/>
+    <rect x="60" y="78" width="400" height="14" fill="url(#hg1)"/>
+    <circle cx="86" cy="72" r="5.5" fill="#ffffff" opacity=".85"/>
+    <circle cx="104" cy="72" r="5.5" fill="#ffffff" opacity=".6"/>
+    <circle cx="122" cy="72" r="5.5" fill="#ffffff" opacity=".4"/>
+    <rect x="146" y="65" width="180" height="14" rx="7" fill="#ffffff" opacity=".3"/>
+  </g>
+
+  <!-- الملف على اليمين -->
+  <g>
+    <rect x="92" y="122" width="104" height="132" rx="12" fill="#ffffff" stroke="#DCE7EA" stroke-width="2"/>
+    <path d="M164 122 h10 l22 22 v10 h-32z" fill="#EAF3F4"/>
+    <rect x="110" y="152" width="68" height="8" rx="4" fill="#CFE2E3"/>
+    <rect x="110" y="170" width="52" height="8" rx="4" fill="#DFEAEB"/>
+    <rect x="110" y="188" width="60" height="8" rx="4" fill="#DFEAEB"/>
+    <rect x="110" y="212" width="40" height="26" rx="6" fill="url(#hg2)" opacity=".9"/>
+  </g>
+
+  <!-- سهم التحويل -->
+  <path d="M208 190 h34" stroke="#E8A649" stroke-width="4" stroke-linecap="round" stroke-dasharray="7 8"/>
+  <path d="M238 182 l12 8 l-12 8z" fill="#E8A649"/>
+
+  <!-- شبكة البصمة 8×8، العنصر المميز في المشروع -->
+  <g transform="translate(262 122)">
+    <rect x="-8" y="-8" width="152" height="152" rx="14" fill="#64ADB1" opacity=".1"/>
+    <g fill="#64ADB1">
+      <rect x="0"  y="0"  width="13" height="13" rx="3"/><rect x="17" y="0"  width="13" height="13" rx="3" opacity=".55"/>
+      <rect x="34" y="0"  width="13" height="13" rx="3" opacity=".8"/><rect x="51" y="0"  width="13" height="13" rx="3" opacity=".35"/>
+      <rect x="68" y="0"  width="13" height="13" rx="3" opacity=".7"/><rect x="85" y="0"  width="13" height="13" rx="3" opacity=".45"/>
+      <rect x="102" y="0" width="13" height="13" rx="3" opacity=".9"/><rect x="119" y="0" width="13" height="13" rx="3" opacity=".3"/>
+
+      <rect x="0"  y="17" width="13" height="13" rx="3" opacity=".4"/><rect x="17" y="17" width="13" height="13" rx="3" opacity=".85"/>
+      <rect x="34" y="17" width="13" height="13" rx="3" opacity=".3"/><rect x="51" y="17" width="13" height="13" rx="3" opacity=".65"/>
+      <rect x="68" y="17" width="13" height="13" rx="3" opacity=".95"/><rect x="85" y="17" width="13" height="13" rx="3" opacity=".35"/>
+      <rect x="102" y="17" width="13" height="13" rx="3" opacity=".6"/><rect x="119" y="17" width="13" height="13" rx="3" opacity=".8"/>
+
+      <rect x="0"  y="34" width="13" height="13" rx="3" opacity=".75"/><rect x="17" y="34" width="13" height="13" rx="3" opacity=".3"/>
+      <rect x="34" y="34" width="13" height="13" rx="3" opacity=".9"/><rect x="51" y="34" width="13" height="13" rx="3" opacity=".5"/>
+      <rect x="68" y="34" width="13" height="13" rx="3" opacity=".4"/><rect x="85" y="34" width="13" height="13" rx="3" opacity=".7"/>
+      <rect x="102" y="34" width="13" height="13" rx="3" opacity=".35"/><rect x="119" y="34" width="13" height="13" rx="3" opacity=".6"/>
+    </g>
+    <g fill="#E8A649">
+      <rect x="0"  y="51" width="13" height="13" rx="3" opacity=".85"/><rect x="17" y="51" width="13" height="13" rx="3" opacity=".4"/>
+      <rect x="34" y="51" width="13" height="13" rx="3" opacity=".6"/><rect x="51" y="51" width="13" height="13" rx="3" opacity=".9"/>
+      <rect x="68" y="51" width="13" height="13" rx="3" opacity=".3"/><rect x="85" y="51" width="13" height="13" rx="3" opacity=".75"/>
+      <rect x="102" y="51" width="13" height="13" rx="3" opacity=".5"/><rect x="119" y="51" width="13" height="13" rx="3" opacity=".8"/>
+    </g>
+    <g fill="#64ADB1">
+      <rect x="0"  y="68" width="13" height="13" rx="3" opacity=".5"/><rect x="17" y="68" width="13" height="13" rx="3" opacity=".8"/>
+      <rect x="34" y="68" width="13" height="13" rx="3" opacity=".35"/><rect x="51" y="68" width="13" height="13" rx="3" opacity=".7"/>
+      <rect x="68" y="68" width="13" height="13" rx="3" opacity=".95"/><rect x="85" y="68" width="13" height="13" rx="3" opacity=".3"/>
+      <rect x="102" y="68" width="13" height="13" rx="3" opacity=".65"/><rect x="119" y="68" width="13" height="13" rx="3" opacity=".45"/>
+
+      <rect x="0"  y="85" width="13" height="13" rx="3" opacity=".9"/><rect x="17" y="85" width="13" height="13" rx="3" opacity=".35"/>
+      <rect x="34" y="85" width="13" height="13" rx="3" opacity=".55"/><rect x="51" y="85" width="13" height="13" rx="3" opacity=".8"/>
+      <rect x="68" y="85" width="13" height="13" rx="3" opacity=".4"/><rect x="85" y="85" width="13" height="13" rx="3" opacity=".7"/>
+      <rect x="102" y="85" width="13" height="13" rx="3" opacity=".3"/><rect x="119" y="85" width="13" height="13" rx="3" opacity=".85"/>
+
+      <rect x="0"  y="102" width="13" height="13" rx="3" opacity=".6"/><rect x="17" y="102" width="13" height="13" rx="3" opacity=".9"/>
+      <rect x="34" y="102" width="13" height="13" rx="3" opacity=".4"/><rect x="51" y="102" width="13" height="13" rx="3" opacity=".3"/>
+      <rect x="68" y="102" width="13" height="13" rx="3" opacity=".75"/><rect x="85" y="102" width="13" height="13" rx="3" opacity=".5"/>
+      <rect x="102" y="102" width="13" height="13" rx="3" opacity=".8"/><rect x="119" y="102" width="13" height="13" rx="3" opacity=".35"/>
+
+      <rect x="0"  y="119" width="13" height="13" rx="3" opacity=".3"/><rect x="17" y="119" width="13" height="13" rx="3" opacity=".65"/>
+      <rect x="34" y="119" width="13" height="13" rx="3" opacity=".85"/><rect x="51" y="119" width="13" height="13" rx="3" opacity=".45"/>
+      <rect x="68" y="119" width="13" height="13" rx="3" opacity=".6"/><rect x="85" y="119" width="13" height="13" rx="3" opacity=".9"/>
+      <rect x="102" y="119" width="13" height="13" rx="3" opacity=".4"/><rect x="119" y="119" width="13" height="13" rx="3" opacity=".7"/>
+    </g>
+  </g>
+
+  <!-- شارة: لا يغادر الجهاز -->
+  <g transform="translate(300 300)">
+    <rect x="0" y="0" width="150" height="38" rx="19" fill="#ffffff" filter="url(#hs)"/>
+    <circle cx="26" cy="19" r="10" fill="#4CAF93"/>
+    <path d="M21 19 l4 4 l7 -8" stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="46" y="12" width="86" height="6" rx="3" fill="#CFE2E3"/>
+    <rect x="46" y="23" width="58" height="5" rx="2.5" fill="#E3EDEE"/>
+  </g>
+
+  <!-- عناصر عائمة صغيرة -->
+  <circle cx="42" cy="120" r="7" fill="#E8A649" opacity=".55"/>
+  <circle cx="490" cy="200" r="9" fill="#64ADB1" opacity=".45"/>
+  <rect x="30" y="220" width="14" height="14" rx="4" fill="#7C6BD6" opacity=".35"/>
+</svg>

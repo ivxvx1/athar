@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300" width="420" height="300" role="img" aria-label="الجهاز يحتفظ بالملف، والبصمة وحدها هي ما يُسلَّم">
+  <defs>
+    <linearGradient id="ag1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7CBFC0"/><stop offset="1" stop-color="#64ADB1"/></linearGradient>
+    <filter id="as" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#22333B" flood-opacity=".12"/>
+    </filter>
+  </defs>
+
+  <circle cx="360" cy="60" r="52" fill="#E8A649" opacity=".14"/>
+  <circle cx="52" cy="240" r="40" fill="#64ADB1" opacity=".15"/>
+
+  <!-- الهاتف: الملف يبقى بداخله -->
+  <g filter="url(#as)">
+    <rect x="46" y="46" width="130" height="210" rx="20" fill="#ffffff" stroke="#DCE7EA" stroke-width="2"/>
+    <rect x="58" y="70" width="106" height="162" rx="12" fill="#EAF5F5"/>
+    <rect x="92" y="54" width="38" height="7" rx="3.5" fill="#DCE7EA"/>
+    <rect x="74" y="96" width="74" height="86" rx="10" fill="url(#ag1)" opacity=".85"/>
+    <circle cx="97" cy="124" r="10" fill="#ffffff" opacity=".8"/>
+    <path d="M78 168 l22 -28 l18 20 l14 -14 l16 22z" fill="#ffffff" opacity=".55"/>
+    <rect x="74" y="196" width="74" height="7" rx="3.5" fill="#CFE2E3"/>
+    <rect x="74" y="210" width="48" height="7" rx="3.5" fill="#DFEAEB"/>
+  </g>
+
+  <!-- خط أحادي الاتجاه: البصمة تخرج، الملف لا -->
+  <path d="M188 150 H262" stroke="#64ADB1" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 7"/>
+  <path d="M258 143 l11 7 l-11 7z" fill="#64ADB1"/>
+  <g transform="translate(196 96)">
+    <rect x="0" y="0" width="58" height="24" rx="12" fill="#4CAF93" opacity=".14"/>
+    <text x="29" y="16" text-anchor="middle" font-family="Poppins, monospace" font-size="10" font-weight="700" fill="#3D8F79">SHA-256</text>
+  </g>
+  <g transform="translate(196 182)">
+    <rect x="0" y="0" width="58" height="24" rx="12" fill="#E76B6B" opacity=".14"/>
+    <line x1="16" y1="8" x2="26" y2="18" stroke="#C9484A" stroke-width="2.4" stroke-linecap="round"/>
+    <line x1="26" y1="8" x2="16" y2="18" stroke="#C9484A" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="32" y="10" width="16" height="4" rx="2" fill="#C9484A" opacity=".5"/>
+  </g>
+
+  <!-- الجهة الرسمية تستلم البصمة وحدها -->
+  <g filter="url(#as)">
+    <rect x="274" y="92" width="112" height="116" rx="16" fill="#ffffff" stroke="#DCE7EA" stroke-width="2"/>
+    <rect x="274" y="92" width="112" height="30" rx="16" fill="#E8A649"/>
+    <rect x="274" y="108" width="112" height="14" fill="#E8A649"/>
+    <g fill="#64ADB1" transform="translate(292 134)">
+      <rect x="0"  y="0"  width="8" height="8" rx="2"/><rect x="12" y="0"  width="8" height="8" rx="2" opacity=".6"/>
+      <rect x="24" y="0"  width="8" height="8" rx="2" opacity=".85"/><rect x="36" y="0"  width="8" height="8" rx="2" opacity=".4"/>
+      <rect x="48" y="0"  width="8" height="8" rx="2" opacity=".7"/><rect x="60" y="0"  width="8" height="8" rx="2" opacity=".5"/>
+      <rect x="0"  y="12" width="8" height="8" rx="2" opacity=".55"/><rect x="12" y="12" width="8" height="8" rx="2" opacity=".9"/>
+      <rect x="24" y="12" width="8" height="8" rx="2" opacity=".35"/><rect x="36" y="12" width="8" height="8" rx="2" opacity=".75"/>
+      <rect x="48" y="12" width="8" height="8" rx="2" opacity=".45"/><rect x="60" y="12" width="8" height="8" rx="2" opacity=".8"/>
+      <rect x="0"  y="24" width="8" height="8" rx="2" opacity=".8"/><rect x="12" y="24" width="8" height="8" rx="2" opacity=".4"/>
+      <rect x="24" y="24" width="8" height="8" rx="2" opacity=".65"/><rect x="36" y="24" width="8" height="8" rx="2" opacity=".9"/>
+      <rect x="48" y="24" width="8" height="8" rx="2" opacity=".3"/><rect x="60" y="24" width="8" height="8" rx="2" opacity=".6"/>
+    </g>
+    <rect x="292" y="176" width="76" height="6" rx="3" fill="#DFEAEB"/>
+    <rect x="292" y="188" width="52" height="6" rx="3" fill="#EAF1F2"/>
+  </g>
+</svg>

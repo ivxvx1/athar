@@ -1,41 +1,60 @@
 /* ==========================================================
-   أثر | المنطق المشترك لكل الصفحات
+   ATHAR | Shared logic for every page
    ----------------------------------------------------------
-   المبدأ الحاكم لهذا الملف كله:
-   لا يوجد fetch ولا XMLHttpRequest ولا WebSocket يحمل ملف
-   المستخدمة إلى أي مكان. الطلب الشبكي الوحيد في المشروع هو
-   قراءة legal-om.json من الموقع نفسه، وهو ملف محتوى ثابت
-   لا يحمل أي بيانات من المستخدمة.
+   The rule that governs this entire file:
+   there is no fetch, no XMLHttpRequest and no WebSocket that
+   carries the user's file anywhere. The only network request in
+   the project reads legal-om.json from this same site, and that
+   is a static content file carrying no user data at all.
 
-   ترتيب الأقسام:
-    1. أدوات عامة
-    2. حساب البصمة SHA-256
-    3. التنسيق: الأحجام والتواريخ والفوارق
-    4. شبكة البصمة 8×8
-    5. الفحص التقني الوصفي للصور
-    6. سجل الحيازة
-    7. بناء report.html
-    8. بناء manifest.txt
-    9. بناء chain-of-custody.txt
-   10. إنشاء حزمة الأدلة
-   11. الصفحة الرئيسية
-   12. صفحة التحقق
-   13. صفحة الساعة الأولى
-   14. نقطة الدخول
+   SECURITY NOTES FOR REVIEWERS
+   - No SQL, no database, no backend: SQL injection is not
+     reachable because there is nothing to inject into.
+   - No accounts, no sessions, no passwords: authentication and
+     access-control flaws have no surface here.
+   - Every value that reaches HTML goes through escapeHtml(),
+     including EXIF strings read out of the user's own file,
+     which are the only attacker-influenced input in the system.
+   - No eval, no new Function, no document.write.
+   - Uploaded files are read locally and never transmitted.
+
+   Section index:
+    1. General helpers
+    2. SHA-256 fingerprint
+    3. Formatting: sizes, dates and intervals
+    4. The 8x8 fingerprint grid
+    5. Descriptive technical inspection of images
+    6. Chain-of-custody log
+    7. Building report.html
+   7.b Building START-HERE.html
+   7.c Opening the print dialog to save the report as PDF
+    8. Building manifest.txt
+    9. Building chain-of-custody.txt
+   10. Assembling the evidence package
+   11. Home page
+   12. Verify page
+   13. First-hour page
+   14. Visual motion
+   15. Entry point
    ========================================================== */
 
 
 /* ==========================================================
-   1. أدوات عامة
+   1. General helpers
    ========================================================== */
 
-/** جلب نص بمفتاحه من لغة محددة، نستعمله في التقرير الذي يحمل اللغتين معًا */
+/** Look up a string by key in a specific language. Used by the report, which always carries both. */
 function tl(lang, key) {
   const table = STRINGS[lang] || STRINGS.ar;
   return (key in table) ? table[key] : key;
 }
 
-/** تعقيم أي نص قبل وضعه داخل HTML، حتى لا يكسر ما تكتبه المستخدمة صفحة التقرير */
+/**
+ * Escape any value before it is placed inside HTML.
+ * This is the single defence against XSS in this project. Every dynamic
+ * value passes through here: what the user types, the file name, and the
+ * EXIF strings read out of the file itself, which an attacker can control.
+ */
 function escapeHtml(value) {
   return String(value == null ? '' : value)
     .replace(/&/g, '&amp;')
@@ -45,16 +64,16 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-/** رقمان دائمًا: 7 تصير 07 */
+/** Always two digits: 7 becomes 07 */
 function pad2(n) { return String(n).padStart(2, '0'); }
 
-/** طابع زمني محلي بصيغة ISO بلا منطقة زمنية: 2026-08-09T22:49:00 */
+/** Local ISO timestamp without a time zone: 2026-08-09T22:49:00 */
 function localISO(date) {
   return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate())
        + 'T' + pad2(date.getHours()) + ':' + pad2(date.getMinutes()) + ':' + pad2(date.getSeconds());
 }
 
-/** اسم المنطقة الزمنية للجهاز بصيغة UTC+04:00 */
+/** The device time-zone offset, formatted as UTC+04:00 */
 function tzOffset(date) {
   const minutes = -date.getTimezoneOffset();
   const sign = minutes >= 0 ? '+' : '-';
@@ -62,12 +81,12 @@ function tzOffset(date) {
   return 'UTC' + sign + pad2(Math.floor(abs / 60)) + ':' + pad2(abs % 60);
 }
 
-/** YYYYMMDD للأسماء والمراجع */
+/** YYYYMMDD, used for file names and case references */
 function stampDay(date) {
   return String(date.getFullYear()) + pad2(date.getMonth() + 1) + pad2(date.getDate());
 }
 
-/** تنزيل أي محتوى كملف، من داخل المتصفح، بلا خادم */
+/** Save any content as a file, entirely inside the browser, with no server involved */
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -76,33 +95,40 @@ function downloadBlob(blob, filename) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  // نحرر الذاكرة بعد أن يلتقط المتصفح الطلب
+  // Release the memory once the browser has picked up the request
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-/** تنظيف اسم الملف من أي مسارات، حتى لا يُنشئ مجلدات غير متوقعة داخل الحزمة */
+/**
+ * Sanitise a file name before it goes into the ZIP.
+ * Guards against path traversal: a file called "../../evil.jpg" must not be
+ * able to escape the evidence/ folder when the archive is extracted.
+ */
 function safeFileName(name) {
-  // نبني الاسم حرفًا حرفًا، ونُسقط محارف التحكم غير المرئية (رموز أقل من 32، و127)
+  // Build the name character by character, dropping invisible control codes (below 32, and 127)
   const clean = Array.from(String(name || 'file'))
-    .map(ch => (ch === '/' || ch === '\\') ? '_' : ch)                        // شرطات المسارات
-    .filter(ch => ch.charCodeAt(0) >= 32 && ch.charCodeAt(0) !== 127)         // محارف التحكم
+    .map(ch => (ch === '/' || ch === '\\') ? '_' : ch)                        // path separators
+    .filter(ch => ch.charCodeAt(0) >= 32 && ch.charCodeAt(0) !== 127)         // control characters
     .join('')
-    .replace(/^\.+/, '_')                                                     // نقاط البداية
+    .replace(/^\.+/, '_')                                                     // leading dots
     .trim();
   return clean || 'file';
 }
 
 
 /* ==========================================================
-   2. حساب البصمة SHA-256
+   2. SHA-256 fingerprint
    ----------------------------------------------------------
-   crypto.subtle مدمجة في المتصفح نفسه. تأخذ محتوى الملف الخام
-   وتُخرج 32 بايت، نحوّلها إلى 64 خانة ست عشرية.
-   تنبيه لغوي مهم: هذه دالة تجزئة (hash) وليست تشفيرًا.
-   التشفير يمكن فكّه، وهذه لا يمكن، ولا يُستخرج الملف منها أبدًا.
+   crypto.subtle is built into the browser itself. It takes the raw
+   bytes of the file and returns 32 bytes, which we render as 64
+   hexadecimal characters.
+
+   Important wording: this is a HASH FUNCTION, not encryption.
+   Encryption can be reversed with a key; a hash cannot, and the
+   file can never be recovered from it.
    ========================================================== */
 
-/** هل يتيح هذا المتصفح، في هذا الوضع، حساب البصمة؟ */
+/** Can this browser, in this mode, compute the fingerprint? (fails on file:// in some browsers) */
 function cryptoAvailable() {
   return !!(window.crypto && window.crypto.subtle && typeof window.crypto.subtle.digest === 'function');
 }
@@ -115,12 +141,12 @@ async function computeSha256(file) {
     .join('');
 }
 
-/** هل النص المُدخل بصمة SHA-256 صالحة الشكل؟ */
+/** Strict input validation: is the pasted text a well-formed SHA-256 fingerprint? */
 function isValidHash(text) {
   return /^[0-9a-f]{64}$/.test(text);
 }
 
-/** توحيد شكل البصمة قبل المقارنة: حروف صغيرة، بلا مسافات، وبلا بادئة مثل SHA-256: */
+/** Normalise a fingerprint before comparing: lower case, no whitespace, no 'SHA-256:' prefix */
 function normalizeHash(text) {
   return String(text || '')
     .replace(/^\s*sha[-\s]?256\s*[:=]?\s*/i, '')
@@ -130,15 +156,15 @@ function normalizeHash(text) {
 
 
 /* ==========================================================
-   3. التنسيق: الأحجام والتواريخ والفوارق
+   3. Formatting: sizes, dates and intervals
    ========================================================== */
 
-/** رقم منسّق حسب اللغة الحالية، بأرقام لاتينية في اللغتين لأن التقرير رسمي */
+/** A number formatted for the current language, in Latin digits in both, because the report is official */
 function fmtNumber(n, lang) {
   return new Intl.NumberFormat((lang || CURRENT_LANG) + '-u-nu-latn').format(n);
 }
 
-/** حجم الملف بوحدة مقروءة */
+/** File size in a human-readable unit */
 function formatSize(bytes, lang) {
   const L = lang || CURRENT_LANG;
   if (bytes < 1024)          return fmtNumber(bytes, L) + ' ' + tl(L, 'u.bytes');
@@ -147,7 +173,7 @@ function formatSize(bytes, lang) {
   return fmtNumber(+(bytes / 1073741824).toFixed(2), L) + ' ' + tl(L, 'u.gb');
 }
 
-/** لحظة زمنية كاملة، بالتقويم الميلادي وأرقام لاتينية حتى تُقرأ أمام أي جهة */
+/** A full timestamp, Gregorian calendar and Latin digits, so any authority can read it */
 function formatMoment(date, lang) {
   const L = lang || CURRENT_LANG;
   return date.toLocaleString(L, {
@@ -159,9 +185,10 @@ function formatMoment(date, lang) {
 }
 
 /**
- * صياغة عدد ووحدته بالعربية صياغة سليمة:
- * ساعة، ساعتان، 3 ساعات، 11 ساعة.
- * لاحظي أن المفرد والمثنى لا يسبقهما رقم، لأن الصيغة نفسها تحمل العدد.
+ * Correct Arabic pluralisation of a count and its unit:
+ * one hour, two hours, 3 hours, 11 hours each take a different form.
+ * Note that the singular and dual are not preceded by a numeral,
+ * because the word form itself already carries the count.
  */
 function arCount(n, one, two, few, many) {
   if (n === 1) return one;
@@ -171,8 +198,8 @@ function arCount(n, one, two, few, many) {
 }
 
 /**
- * الفارق الزمني بين تاريخ الملف ولحظة التوثيق.
- * نعرضه بصيغة مفهومة، لا بعدد ثوانٍ خام.
+ * The interval between the file date and the moment of documentation.
+ * Presented in readable form rather than as a raw number of seconds.
  */
 function formatGap(ms, lang) {
   const L = lang || CURRENT_LANG;
@@ -197,11 +224,11 @@ function formatGap(ms, lang) {
   if (days)    parts.push(arCount(days,    'يوم',   'يومان',   'أيام',  'يومًا'));
   if (hours)   parts.push(arCount(hours,   'ساعة',  'ساعتان',  'ساعات', 'ساعة'));
   if (minutes && !days) parts.push(arCount(minutes, 'دقيقة', 'دقيقتان', 'دقائق', 'دقيقة'));
-  // في العربية تلتصق واو العطف بما بعدها: «3 ساعات و20 دقيقة»
+  // In Arabic the conjunction attaches to the following word: '3 hours and20 minutes'
   return parts.join(' ' + tl(L, 'u.and'));
 }
 
-/** صيغة إنجليزية مختصرة للفارق، تُستعمل في manifest.txt النصي */
+/** A compact English form of the interval, used in the plain-text manifest.txt */
 function elapsedPlain(ms) {
   if (ms < 0) return 'negative (device file date is later than documentation time)';
   const totalMinutes = Math.floor(ms / 60000);
@@ -218,11 +245,12 @@ function elapsedPlain(ms) {
 
 
 /* ==========================================================
-   4. شبكة البصمة 8×8
+   4. The 8x8 fingerprint grid
    ----------------------------------------------------------
-   لماذا شبكة لا سطر؟ لأن سطرًا من 64 حرفًا لا يراه العقل رقمًا،
-   بل يراه ضجيجًا. الشبكة تجعل الرقم 64 ملموسًا، وتعكس شعار
-   المشروع المبني من مربعات.
+   Why a grid rather than a line? Because a 64-character string does
+   not read as a number to the human eye; it reads as noise. The grid
+   makes the number 64 tangible, and echoes the project's logo, which
+   is built from dissolving squares.
    ========================================================== */
 function renderHashGrid(container, hex) {
   container.textContent = '';
@@ -231,7 +259,7 @@ function renderHashGrid(container, hex) {
     const cell = document.createElement('span');
     cell.className = 'hash-cell';
     cell.textContent = hex[i];
-    cell.style.animationDelay = (i * 6) + 'ms';   // الظهور المتتابع
+    cell.style.animationDelay = (i * 6) + 'ms';   // staggered reveal
     frag.appendChild(cell);
   }
   container.appendChild(frag);
@@ -239,14 +267,19 @@ function renderHashGrid(container, hex) {
 
 
 /* ==========================================================
-   5. الفحص التقني الوصفي للصور
+   5. Descriptive technical inspection of images
    ----------------------------------------------------------
-   حدود هذا القسم صريحة: نقرأ ما هو مكتوب داخل الملف ونعرضه كما هو.
-   لا نحكم على أصالة الصورة، ولا نقول إن كانت مولّدة أو معدّلة.
-   قراءة وصفية فقط.
+   The boundary of this section is explicit: we read what is written
+   inside the file and display it as it is. We pass no judgement on
+   whether an image is genuine, generated or edited. Description only.
+
+   SECURITY NOTE: everything parsed here comes from a file supplied by
+   whoever sent it to the victim, so it is untrusted input. The parser
+   below never trusts a length field, bounds-checks every read, and
+   every extracted string is escaped before it reaches the page.
    ========================================================== */
 
-/** التعرّف على نوع الملف من أول بايتاته، لا من امتداده */
+/** Identify the file type from its leading bytes rather than its extension */
 function detectSignature(bytes) {
   const b = bytes;
   const at = (i, arr) => arr.every((v, k) => b[i + k] === v);
@@ -266,33 +299,34 @@ function detectSignature(bytes) {
 }
 
 /**
- * قارئ EXIF مختصر لصور JPEG.
- * بنية EXIF: مقطع APP1 يبدأ بـ FFE1، وداخله "Exif\0\0" ثم ترويسة TIFF،
- * ثم جداول (IFD) كل مدخل فيها 12 بايت: رقم الحقل، ونوعه، وعدده، وقيمته.
+ * A compact EXIF reader for JPEG images.
+ * EXIF layout: an APP1 segment beginning with FFE1, containing "Exif\0\0"
+ * followed by a TIFF header, then directories (IFDs) whose entries are
+ * 12 bytes each: tag, type, count, and value or offset.
  */
 function readExif(bytes) {
   const out = { present: false, dateTimeOriginal: null, make: null, model: null, gps: false };
   if (bytes.length < 4 || bytes[0] !== 0xFF || bytes[1] !== 0xD8) return out;
 
-  // 5.1 البحث عن مقطع APP1 الذي يحمل EXIF
+  // 5.1 Locate the APP1 segment that carries the EXIF block
   let offset = 2, app1 = -1;
   while (offset + 4 < bytes.length) {
     if (bytes[offset] !== 0xFF) break;
     const marker = bytes[offset + 1];
-    if (marker === 0xDA || marker === 0xD9) break;           // بداية بيانات الصورة، لا مقاطع بعدها
+    if (marker === 0xDA || marker === 0xD9) break;           // start of image data, no further segments
     const size = (bytes[offset + 2] << 8) | bytes[offset + 3];
     if (size < 2) break;
     if (marker === 0xE1 &&
         bytes[offset + 4] === 0x45 && bytes[offset + 5] === 0x78 &&
         bytes[offset + 6] === 0x69 && bytes[offset + 7] === 0x66) {
-      app1 = offset + 10;   // بعد "Exif\0\0"
+      app1 = offset + 10;   // just past "Exif\0\0"
       break;
     }
     offset += 2 + size;
   }
   if (app1 < 0 || app1 + 8 > bytes.length) return out;
 
-  // 5.2 ترويسة TIFF: ترتيب البايتات، ثم موضع أول جدول
+  // 5.2 TIFF header: byte order, then the offset of the first directory
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const little = view.getUint16(app1) === 0x4949;
   if (view.getUint16(app1 + 2, little) !== 0x2A) return out;
@@ -303,7 +337,7 @@ function readExif(bytes) {
 
   const TYPE_SIZE = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 9: 4, 10: 8 };
 
-  /** قراءة نص ASCII من مدخل */
+  /** Read an ASCII string from an entry, bounded by the buffer length */
   function readAscii(valueOffset, count) {
     let s = '';
     for (let i = 0; i < count && valueOffset + i < bytes.length; i++) {
@@ -314,11 +348,11 @@ function readExif(bytes) {
     return s.trim();
   }
 
-  /** المرور على جدول واحد واستدعاء دالة لكل حقل */
+  /** Walk one directory and call a visitor for each tag */
   function walkIFD(start, visit) {
     if (start + 2 > bytes.length) return;
     const count = view.getUint16(start, little);
-    if (count > 512) return;   // حماية من ملف تالف
+    if (count > 512) return;   // guard against a corrupt or hostile file
     for (let i = 0; i < count; i++) {
       const entry = start + 2 + i * 12;
       if (entry + 12 > bytes.length) return;
@@ -337,14 +371,14 @@ function readExif(bytes) {
     if (tag === 0x0110 && type === 2) out.model = readAscii(valueOffset, num);
     if (tag === 0x0132 && type === 2) out.dateTimeOriginal = out.dateTimeOriginal || readAscii(valueOffset, num);
     if (tag === 0x8769 && type === 4) exifIFD = app1 + view.getUint32(valueOffset, little);
-    if (tag === 0x8825) out.gps = true;   // نكتفي بوجود الإحداثيات ولا نستخرجها
+    if (tag === 0x8825) out.gps = true;   // we record only that coordinates exist; we never extract them
   });
 
   if (exifIFD && exifIFD + 2 < bytes.length) {
     walkIFD(exifIFD, (tag, type, num, valueOffset) => {
       if (tag === 0x9003 && type === 2) {
         const v = readAscii(valueOffset, num);
-        if (v) out.dateTimeOriginal = v;   // تاريخ الالتقاط الأصلي أدق من تاريخ التعديل
+        if (v) out.dateTimeOriginal = v;   // the original capture date is more reliable than the modification date
       }
     });
   }
@@ -352,7 +386,7 @@ function readExif(bytes) {
   return out;
 }
 
-/** أبعاد الصورة بالبكسل، بمحاولتين: الحديثة ثم القديمة */
+/** Image dimensions in pixels, with a modern path and a fallback */
 async function readDimensions(file) {
   if (typeof createImageBitmap === 'function') {
     try {
@@ -360,7 +394,7 @@ async function readDimensions(file) {
       const dims = { width: bitmap.width, height: bitmap.height };
       if (bitmap.close) bitmap.close();
       return dims;
-    } catch (e) { /* نكمل بالطريقة البديلة */ }
+    } catch (e) { /* fall through to the fallback */ }
   }
   return new Promise(resolve => {
     const url = URL.createObjectURL(file);
@@ -372,9 +406,9 @@ async function readDimensions(file) {
 }
 
 /**
- * الطبقة الثانية: قراءة وصفية للصور فقط.
- * نقرأ أول 128 كيلوبايت فقط، لأن بيانات EXIF تقع في مقدمة الملف دائمًا،
- * فلا نُحمّل ذاكرة الهاتف ملفًا كبيرًا مرتين.
+ * The second layer: a descriptive read, for images only.
+ * We read only the first 128 KB, because EXIF always sits at the front of
+ * the file, so a large file is never loaded into phone memory twice.
  */
 async function inspectImage(file) {
   const head = new Uint8Array(await file.slice(0, 131072).arrayBuffer());
@@ -389,9 +423,10 @@ async function inspectImage(file) {
 
 
 /* ==========================================================
-   6. سجل الحيازة
+   6. Chain-of-custody log
    ----------------------------------------------------------
-   قائمة أحداث في الذاكرة فقط. تُمحى بإعادة تحميل الصفحة.
+   A list of events held in memory only. Reloading the page erases it.
+   Nothing here is ever written to disk or sent anywhere.
    ========================================================== */
 const custodyLog = [];
 
@@ -401,17 +436,22 @@ function logEvent(code, detail) {
 
 
 /* ==========================================================
-   7. بناء report.html
+   7. Building report.html
    ----------------------------------------------------------
-   قرار تقني: لا نستعمل أي مكتبة PDF، لأن دعم العربية والاتجاه
-   من اليمين لليسار فيها رديء ويكسر النص. بدلًا من ذلك نبني
-   صفحة HTML مكتفية ذاتيًا، كل أنماطها داخلها، وبقواعد طباعة
-   مضبوطة. المستخدمة تفتحها وتطبعها PDF من المتصفح، فتخرج
-   العربية سليمة تمامًا.
-   التقرير يحمل اللغتين معًا دائمًا، لأنه قد يُسلَّم لجهة رسمية.
+   Design decision: no PDF library is used. Arabic and right-to-left
+   support in PDF libraries is poor and breaks the text. Instead we
+   build a self-contained HTML page with all of its styles embedded
+   and print rules tuned for A4. The user opens it and prints it to
+   PDF from the browser, so the Arabic comes out perfectly.
+
+   The report always carries both languages, regardless of the
+   interface language, because it may be handed to an authority.
+
+   Every interpolated value below is escaped. Nothing reaches this
+   template raw.
    ========================================================== */
 
-/** صف بيانات ثلاثي: تسمية عربية، ثم القيمة، ثم تسمية إنجليزية */
+/** A three-column data row: Arabic label, value, English label */
 function reportRow(key, value, mono) {
   return `<tr>
       <th class="lb-ar">${escapeHtml(tl('ar', key))}</th>
@@ -420,7 +460,7 @@ function reportRow(key, value, mono) {
     </tr>`;
 }
 
-/** عنوان قسم ثنائي اللغة */
+/** A bilingual section heading */
 function reportHeading(ar, en) {
   return `<h2><span>${escapeHtml(ar)}</span><span class="en" dir="ltr">${escapeHtml(en)}</span></h2>`;
 }
@@ -432,10 +472,10 @@ function buildReportHtml(state) {
   const gapMs = docAt - fileDate;
   const ctx = state.context;
 
-  /* --- خانات البصمة، نفس شبكة 8×8 التي في الموقع --- */
+  /* --- Fingerprint cells: the same 8x8 grid used on the site --- */
   const cells = state.hash.split('').map(ch => `<span>${ch}</span>`).join('');
 
-  /* --- توثيق الحادثة، وكل حقوله اختيارية --- */
+  /* --- Incident record; every field is optional --- */
   const ctxRows = [];
   if (ctx.typeKey)     ctxRows.push(reportRow('ctx.type',     tl('ar', ctx.typeKey) + '  ·  ' + tl('en', ctx.typeKey)));
   if (ctx.platformKey) ctxRows.push(reportRow('ctx.platform', tl('ar', ctx.platformKey) + '  ·  ' + tl('en', ctx.platformKey)));
@@ -449,7 +489,7 @@ function buildReportHtml(state) {
     ${ctx.note ? `<div class="quote"><div class="quote-label">ماذا حدث، بكلمات المستخدمة · What happened, in the user’s own words</div><p>${escapeHtml(ctx.note).replace(/\n/g, '<br>')}</p></div>` : ''}
   </section>` : '';
 
-  /* --- المؤشرات التقنية، للصور فقط، وصفية بحتة --- */
+  /* --- Technical indicators: images only, purely descriptive --- */
   let techSection = '';
   if (state.tech) {
     const T = state.tech;
@@ -483,8 +523,8 @@ function buildReportHtml(state) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Athar Report ${escapeHtml(state.caseRef)}</title>
 <style>
-/* هذا التقرير مكتفٍ ذاتيًا: لا خطوط خارجية ولا صور ولا سكربتات.
-   يفتح ويطبع على أي جهاز، حتى بلا إنترنت. */
+/* This report is self-contained: no external fonts, images or scripts.
+   It opens and prints on any device, even with no internet connection. */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Segoe UI', Tahoma, 'Noto Sans Arabic', 'Geeza Pro', system-ui, sans-serif;
@@ -542,7 +582,7 @@ footer { margin-top: 30px; border-top: 1px solid #E3EBEE; padding-top: 14px; fon
 footer p { margin-bottom: 4px; }
 footer .en { direction: ltr; }
 
-/* شريط الطباعة: يظهر على الشاشة فقط، ويختفي في الورق */
+/* Print bar: visible on screen only, hidden on paper */
 .printbar { background: #22333B; color: #F5F8FA; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px; }
 .printbar button {
   font: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
@@ -552,7 +592,7 @@ footer .en { direction: ltr; }
 .printbar p { font-size: 12px; opacity: .85; margin-top: 9px; }
 .printbar p.en { direction: ltr; }
 
-/* ---- قواعد الطباعة: مقاس A4، وبلا قطع للأقسام ---- */
+/* ---- Print rules: A4 page size, and no section split across pages ---- */
 @page { size: A4; margin: 14mm; }
 @media print {
   body { background: #fff; padding: 0; font-size: 11.5px; }
@@ -667,7 +707,7 @@ footer .en { direction: ltr; }
 
 </div>
 <script>
-  // زر الطباعة. هذا كل الجافاسكربت في هذا الملف، ولا يتصل بأي شيء.
+  // The print button. This is all the JavaScript in this file, and it contacts nothing.
   document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
 </script>
 </body>
@@ -676,12 +716,16 @@ footer .en { direction: ltr; }
 
 
 /* ==========================================================
-   7.b بناء START-HERE.html
+   7.b Building START-HERE.html
    ----------------------------------------------------------
-   ملف خامس داخل الحزمة، وهو ليس وثيقة رسمية بل دليل للمستخدمة
-   نفسها: ماذا في الحزمة، وماذا تفعل بها، وكيف تُخرج PDF.
-   يُكتب بلغة الواجهة وقت إنشاء الحزمة، لأنه صفحتها هي.
-   أما report.html فيحمل اللغتين دائمًا لأنه هو المعدّ للتسليم.
+   The fifth file inside the package. It is not an official document
+   but a guide for the user herself: what is in the package, what to
+   do now, and how to produce a PDF.
+
+   It is written in the interface language at the time the package was
+   created, because it is her page. report.html, by contrast, always
+   carries both languages because that is the document meant for
+   hand-over.
    ========================================================== */
 function buildStartHere(state) {
   const L = CURRENT_LANG;
@@ -690,7 +734,7 @@ function buildStartHere(state) {
   const f = state.file;
   const name = safeFileName(f.name);
 
-  /* الوصف الجاهز الذي يمكن للمستخدمة قراءته عند التسليم */
+  /* A ready-made description she can read out when handing the package over */
   const handBody = tl(L, 'sh.handBody')
     .replace('{HASH}', state.hash)
     .replace('{TIME}', localISO(state.documentedAt) + ' (' + tzOffset(state.documentedAt) + ')')
@@ -714,7 +758,7 @@ function buildStartHere(state) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${S('sh.title')} · ${escapeHtml(state.caseRef)}</title>
 <style>
-/* صفحة مكتفية ذاتيًا: لا خطوط خارجية ولا صور ولا ملفات مرافقة. */
+/* A self-contained page: no external fonts, images or companion files. */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Segoe UI', Tahoma, 'Noto Sans Arabic', 'Geeza Pro', system-ui, sans-serif;
@@ -727,7 +771,7 @@ h1 { font-size: 25px; font-weight: 700; }
 .meta b { color: #22333B; font-family: 'Courier New', monospace; }
 h2 { font-size: 17px; font-weight: 700; color: #3F8A8E; margin: 30px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #E3EBEE; }
 
-/* شريط الطباعة، يختفي عند الطباعة نفسها */
+/* Print bar; hidden in the printed output itself */
 .printbar { background: #22333B; border-radius: 10px; padding: 16px 18px; margin-top: 20px; color: #F5F8FA; }
 .printbar button {
   font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
@@ -746,7 +790,7 @@ ol { padding-inline-start: 22px; }
 ol li { margin-bottom: 11px; }
 
 .quote { background: #EAF5F5; border-inline-start: 4px solid #3F8A8E; border-radius: 8px; padding: 16px 18px; margin-top: 10px; }
-/* البصمة كلمة واحدة من 64 حرفًا، فلولا هذا السطر لدفعت الصفحة خارج شاشة الهاتف */
+/* The fingerprint is one unbroken 64-character word; without this it would push the page off a phone screen */
 .quote .say { background: #FFFFFF; border-radius: 6px; padding: 14px; margin-top: 10px; font-size: 14px; overflow-wrap: anywhere; }
 .hint { font-size: 12.5px; color: #6B7A82; }
 
@@ -833,7 +877,7 @@ footer p { margin-bottom: 6px; }
 
 </div>
 <script>
-  // زر الطباعة. هذا كل الجافاسكربت في هذا الملف، ولا يتصل بأي شيء.
+  // The print button. This is all the JavaScript in this file, and it contacts nothing.
   document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
 </script>
 </body>
@@ -842,26 +886,30 @@ footer p { margin-bottom: 6px; }
 
 
 /* ==========================================================
-   7.c فتح نافذة الطباعة لحفظ التقرير PDF
+   7.c Opening the print dialog to save the report as PDF
    ----------------------------------------------------------
-   لا نستعمل أي مكتبة PDF، لأنها تكسر العربية والاتجاه من اليمين
-   لليسار. بدلًا من ذلك نبني التقرير في إطار مخفي داخل الصفحة،
-   ثم نطلب من المتصفح طباعته. المستخدمة تختار «حفظ كـ PDF» من
-   نافذة الطباعة، فتخرج العربية سليمة تمامًا.
+   Again, no PDF library, because they break Arabic and right-to-left
+   text. Instead the report is built into a hidden iframe inside the
+   page and the browser is asked to print it. The user chooses
+   "Save as PDF" in the print dialog and the Arabic comes out intact.
+
+   NOTE: this iframe inherits the page's Content-Security-Policy, which
+   is why style-src must allow 'unsafe-inline' in _headers. Without it
+   the printed report comes out with no styling at all.
    ========================================================== */
 function printReport(state, onDone) {
   const html = buildReportHtml(state);
   const finish = () => { if (typeof onDone === 'function') onDone(); };
 
-  /* الخطة البديلة: نفتح التقرير في تبويب مستقل، فتطبعه المستخدمة بنفسها.
-     نستعملها إن منع المتصفح الطباعة من داخل إطار، وهو ما يحدث في بعض
-     متصفحات الهاتف. */
+  /* Fallback: open the report in its own tab so the user can print it
+     herself. Used when the browser refuses to print from inside an
+     iframe, which happens in some mobile browsers. */
   function openInTab() {
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank');
     if (!win) {
-      // حتى فتح التبويب مُنع، فننزّل التقرير ملفًا لتفتحه وتطبعه
+      // even the tab was blocked, so download the report as a file instead
       downloadBlob(blob, 'athar-report-' + state.caseRef + '.html');
     }
     setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -869,7 +917,7 @@ function printReport(state, onDone) {
   }
 
   const frame = document.createElement('iframe');
-  // نُخفيه خارج الشاشة لا بـ display:none، لأن الإطار المخفي كليًا لا يُطبع
+  // Hidden off-screen rather than with display:none, because a fully hidden iframe will not print
   frame.setAttribute('aria-hidden', 'true');
   frame.setAttribute('title', 'report');
   frame.style.cssText = 'position:fixed;inset-inline-start:-10000px;top:0;width:794px;height:1123px;border:0;';
@@ -878,7 +926,7 @@ function printReport(state, onDone) {
   frame.addEventListener('load', () => {
     if (settled) return;
     settled = true;
-    // مهلة قصيرة حتى ينتهي المتصفح من تنسيق الصفحة قبل فتح نافذة الطباعة
+    // a short delay so the browser finishes laying out the page before the dialog opens
     setTimeout(() => {
       let ok = false;
       try {
@@ -892,7 +940,7 @@ function printReport(state, onDone) {
     }, 450);
   });
 
-  // شبكة أمان: إن لم يُحمّل الإطار خلال ثلاث ثوانٍ، نسلك الطريق البديل
+  // Safety net: if the iframe has not loaded within three seconds, take the fallback path
   setTimeout(() => {
     if (settled) return;
     settled = true;
@@ -906,10 +954,12 @@ function printReport(state, onDone) {
 
 
 /* ==========================================================
-   8. بناء manifest.txt
+   8. Building manifest.txt
    ----------------------------------------------------------
-   نص عادي بلا تنسيق، بالإنجليزية، ليقرأه أي طرف بأي أداة،
-   وليتمكن من التحقق باستقلال تام عن أثر.
+   Plain unformatted text, in English, so that any party can read it
+   with any tool and verify the evidence entirely independently of
+   Athar. The verification commands at the end are the point: an
+   examiner never has to trust this platform.
    ========================================================== */
 function buildManifest(state) {
   const f = state.file;
@@ -957,12 +1007,12 @@ function buildManifest(state) {
   L.push('No file was transmitted to any server.');
   L.push('');
 
-  return L.join('\r\n');   // نهايات أسطر ويندوز، حتى يُقرأ في المفكرة بلا التصاق
+  return L.join('\r\n');   // Windows line endings, so Notepad shows it correctly
 }
 
 
 /* ==========================================================
-   9. بناء chain-of-custody.txt
+   9. Building chain-of-custody.txt
    ========================================================== */
 function buildCustody(state) {
   const L = [];
@@ -986,7 +1036,7 @@ function buildCustody(state) {
 
 
 /* ==========================================================
-   10. إنشاء حزمة الأدلة
+   10. Assembling the evidence package
    ========================================================== */
 async function buildPackage(state) {
   if (typeof JSZip === 'undefined') {
@@ -998,11 +1048,11 @@ async function buildPackage(state) {
   const zip = new JSZip();
   const name = safeFileName(state.file.name);
 
-  // الملف الأصلي بايتًا ببايت، بلا أي إعادة ضغط، حتى تبقى بصمته كما هي
+  // The original file byte for byte, stored with no re-compression, so its fingerprint stays identical
   zip.folder('evidence').file(name, state.file, { compression: 'STORE' });
 
-  zip.file('START-HERE.html',      buildStartHere(state));   // دليل المستخدمة، أول ما تفتحه
-  zip.file('report.html',          buildReportHtml(state));  // الوثيقة الرسمية للتسليم
+  zip.file('START-HERE.html',      buildStartHere(state));   // the user's guide, the first thing she opens
+  zip.file('report.html',          buildReportHtml(state));  // the official document for hand-over
   zip.file('manifest.txt',         buildManifest(state));
   zip.file('chain-of-custody.txt', buildCustody(state));
 
@@ -1011,7 +1061,7 @@ async function buildPackage(state) {
 
 
 /* ==========================================================
-   11. الصفحة الرئيسية
+   11. Home page
    ========================================================== */
 function initHome() {
   const el = id => document.getElementById(id);
@@ -1023,7 +1073,7 @@ function initHome() {
   const errorText  = el('errorText');
   const busyText   = el('busyText');
 
-  /* الحالة كلها هنا، في الذاكرة، ولا شيء منها يُكتب على القرص */
+  /* All state lives here, in memory. None of it is ever written to disk. */
   const state = {
     file: null,
     hash: null,
@@ -1034,7 +1084,7 @@ function initHome() {
     context: {}
   };
 
-  /* ---------- عرض خطأ مفهوم ---------- */
+  /* ---------- Show a comprehensible error (never a raw exception) ---------- */
   function showError(key) {
     errorText.dataset.i18n = key;
     errorText.textContent = t(key);
@@ -1046,7 +1096,7 @@ function initHome() {
     delete errorText.dataset.i18n;
   }
 
-  /* ---------- رسم النتائج، ويُعاد استدعاؤها عند تبديل اللغة ---------- */
+  /* ---------- Render the results; called again when the language changes ---------- */
   function renderResults() {
     if (!state.file) return;
     const f = state.file;
@@ -1063,7 +1113,7 @@ function initHome() {
     const isImage = f.type.startsWith('image/');
     el('layerNote').classList.toggle('hidden', isImage);
 
-    /* المؤشرات التقنية الوصفية، للصور فقط */
+    /* Descriptive technical indicators, images only. Every value is escaped. */
     const techCard = el('techCard');
     if (state.tech) {
       const T = state.tech;
@@ -1086,24 +1136,24 @@ function initHome() {
     }
   }
 
-  /* ---------- معالجة الملف ---------- */
+  /* ---------- Process the dropped file ---------- */
   async function handleFile(file) {
     clearError();
 
     if (!cryptoAvailable()) { showError('error.noCrypto'); return; }
     if (file.size === 0)    { showError('error.empty');    return; }
 
-    // للملفات الكبيرة نُنبّه أن الانتظار متوقع، فلا تظن المستخدمة أن الصفحة تعطلت
+    // For large files, say that the wait is expected, so she does not think the page has frozen
     busyText.dataset.i18n = file.size > 50 * 1024 * 1024 ? 'drop.busyBig' : 'drop.busy';
     busyText.textContent = t(busyText.dataset.i18n);
     dropzone.classList.add('is-busy');
     dropzone.setAttribute('aria-busy', 'true');
 
-    // مهلة قصيرة حتى يرسم المتصفح مؤشر الانتظار قبل أن ينشغل بالحساب
+    // a short delay so the spinner paints before the main thread starts hashing
     await new Promise(r => setTimeout(r, 30));
 
     try {
-      custodyLog.length = 0;   // ملف جديد، سجل حيازة جديد
+      custodyLog.length = 0;   // new file, new custody log
       logEvent('FILE_SELECTED', file.name + ' (' + file.size + ' bytes, ' + (file.type || 'unknown type') + ')');
 
       const hex = await computeSha256(file);
@@ -1121,7 +1171,7 @@ function initHome() {
           state.tech = await inspectImage(file);
           logEvent('IMAGE_INSPECTED', 'descriptive indicators read from file header');
         } catch (e) {
-          // فشل الفحص الوصفي لا يُبطل التوثيق، فالطبقة الأولى هي الأهم
+          // a failed descriptive read does not invalidate the documentation; layer one is what matters
           logEvent('IMAGE_INSPECT_FAILED', 'descriptive layer unavailable for this file');
         }
       }
@@ -1140,14 +1190,14 @@ function initHome() {
     }
   }
 
-  /* ---------- ربط منطقة الإسقاط ---------- */
+  /* ---------- Wire up the drop zone ---------- */
   dropzone.addEventListener('click', () => filepicker.click());
   dropzone.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); filepicker.click(); }
   });
   filepicker.addEventListener('change', e => {
     if (e.target.files[0]) handleFile(e.target.files[0]);
-    filepicker.value = '';   // حتى يعمل اختيار الملف نفسه مرة أخرى
+    filepicker.value = '';   // so choosing the same file again still fires a change event
   });
 
   ['dragenter', 'dragover'].forEach(evt =>
@@ -1161,12 +1211,12 @@ function initHome() {
     if (file) handleFile(file);
   });
 
-  // منع المتصفح من فتح الملف إن أُفلت خارج المنطقة
+  // Stop the browser from navigating away if a file is dropped outside the zone
   ['dragover', 'drop'].forEach(evt =>
     window.addEventListener(evt, e => { if (e.target !== dropzone) e.preventDefault(); })
   );
 
-  /* ---------- نسخ البصمة ---------- */
+  /* ---------- Copy the fingerprint ---------- */
   el('copyBtn').addEventListener('click', async function () {
     const hex = el('hashLine').textContent;
     if (!hex) return;
@@ -1180,7 +1230,7 @@ function initHome() {
       say('btn.copied');
       showToast(t('toast.copied'), 'success');
     } catch (e) {
-      // بديل إن منع المتصفح النسخ: نُظلّل السطر حتى تنسخه المستخدمة بنفسها
+      // Fallback when the browser blocks clipboard access: select the line so she can copy it herself
       const range = document.createRange();
       range.selectNodeContents(el('hashLine'));
       const sel = window.getSelection();
@@ -1190,7 +1240,7 @@ function initHome() {
     }
   });
 
-  /* ---------- جمع ما كتبته المستخدمة، يشترك فيه زرّا التقرير والطباعة ---------- */
+  /* ---------- Collect what the user typed; shared by the package and print buttons ---------- */
   function collectContext() {
     state.context = {
       typeKey:     el('evType').value || '',
@@ -1204,7 +1254,7 @@ function initHome() {
     }
   }
 
-  /* ---------- زر حفظ التقرير PDF ---------- */
+  /* ---------- The save-as-PDF button ---------- */
   const pdfBtn = el('pdfBtn');
   if (pdfBtn) {
     pdfBtn.addEventListener('click', () => {
@@ -1214,7 +1264,7 @@ function initHome() {
       state.generatedAt = new Date();
       logEvent('REPORT_PRINTED', 'report opened in the browser print dialog');
 
-      // تغذية راجعة فورية، حتى لا تظن المستخدمة أن الزر لم يستجب
+      // immediate feedback, so she does not think the button ignored her
       pdfBtn.disabled = true;
       const label = pdfBtn.querySelector('span');
       label.dataset.i18n = 'btn.pdfBusy';
@@ -1228,13 +1278,13 @@ function initHome() {
     });
   }
 
-  /* ---------- إنشاء التقرير ---------- */
+  /* ---------- Generate the evidence package ---------- */
   const reportBtn = el('reportBtn');
   reportBtn.addEventListener('click', async () => {
     if (!state.file) return;
     clearError();
 
-    // نجمع ما كتبته المستخدمة في لحظة الضغط، لا قبلها
+    // read the form at the moment of the click, not before
     collectContext();
 
     state.generatedAt = new Date();
@@ -1266,19 +1316,19 @@ function initHome() {
     }
   });
 
-  /* ---------- المسح الكامل ---------- */
+  /* ---------- Erase everything ---------- */
   el('clearBtn').addEventListener('click', () => {
     if (!confirm(t('clear.confirm'))) return;
-    location.reload();   // أسرع وأنظف طريقة لمحو كل شيء من الذاكرة
+    location.reload();   // the fastest and cleanest way to wipe every trace from memory
   });
 
-  /* ---------- إعادة الرسم عند تبديل اللغة ---------- */
+  /* ---------- Re-render when the language changes ---------- */
   document.addEventListener('athar:langchange', renderResults);
 }
 
 
 /* ==========================================================
-   12. صفحة التحقق
+   12. Verify page
    ========================================================== */
 function initVerify() {
   const el = id => document.getElementById(id);
@@ -1382,10 +1432,11 @@ function initVerify() {
 
 
 /* ==========================================================
-   13. صفحة الساعة الأولى
+   13. First-hour page
    ----------------------------------------------------------
-   المحتوى القانوني يُقرأ من ملف بيانات منفصل، حتى تُضاف دول
-   أخرى لاحقًا بتحرير ملف نصي دون لمس أي كود.
+   The legal content is read from a separate data file so that other
+   countries can be added later by editing a text file, without
+   touching a single line of code.
    ========================================================== */
 function initFirstHour() {
   const holder      = document.getElementById('legalHolder');
@@ -1398,7 +1449,7 @@ function initFirstHour() {
     if (!legalData) return;
     const sections = Array.isArray(legalData.sections) ? legalData.sections : [];
 
-    // ما دام المحتوى غير معتمد أو فارغًا، يبقى العنصر النائب ظاهرًا كما هو
+    // While the content is unverified or empty, the placeholder stays visible
     if (legalData.status !== 'verified' || sections.length === 0) {
       placeholder.classList.remove('hidden');
       holder.textContent = '';
@@ -1423,8 +1474,10 @@ function initFirstHour() {
         box.appendChild(p);
       }
 
-      /* أرقام الاتصال: تُبنى كروابط قابلة للضغط من الهاتف مباشرة.
-         نسمح بـ tel و mailto والروابط الآمنة فقط، ولا شيء غير ذلك. */
+      /* Contact numbers, built as links that are tappable from a phone.
+         Only tel:, mailto: and https: are permitted. Any other scheme in
+         the data file is rendered as inert text, so a tampered JSON cannot
+         inject a javascript: URL. */
       if (Array.isArray(sec.contacts) && sec.contacts.length) {
         const row = document.createElement('div');
         row.className = 'contact-row';
@@ -1465,7 +1518,7 @@ function initFirstHour() {
       holder.appendChild(box);
     });
 
-    /* المصادر الرسمية التي أُخذت منها هذه المعلومات، حتى يتحقق أي شخص بنفسه */
+    /* The official sources this information came from, so anyone can verify it */
     const sources = Array.isArray(legalData.sources) ? legalData.sources : [];
     if (sources.length) {
       const box = document.createElement('p');
@@ -1492,17 +1545,18 @@ function initFirstHour() {
     }
   }
 
-  // اسم ملف المحتوى مكتوب في خاصية data-legal على العنصر نفسه،
-  // فإضافة دولة أخرى لاحقًا تتم بإضافة ملف JSON وتغيير هذه الخاصية، بلا تعديل كود.
+  // The content file name lives in the data-legal attribute on the element
+  // itself, so adding another country means adding a JSON file and changing
+  // that attribute, with no code change at all.
   const source = holder.dataset.legal || 'legal-om.json';
 
-  // هذا هو الطلب الشبكي الوحيد في المشروع، ويقرأ ملف محتوى من الموقع نفسه.
-  // لا يحمل أي بيانات من المستخدمة، ولا يرسل شيئًا.
+  // This is the only network request in the project. It reads a content file
+  // from this same origin, carries no user data, and sends nothing.
   fetch(source, { cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)))
     .then(data => { legalData = data; renderLegal(); })
     .catch(() => {
-      // فتح الموقع كملف محلي يمنع القراءة. نقول ذلك بوضوح بدل الفشل الصامت.
+      // Opening the site as a local file blocks this read. Say so plainly rather than failing silently.
       const p = document.getElementById('legalFallback');
       if (p) p.classList.remove('hidden');
     });
@@ -1512,18 +1566,19 @@ function initFirstHour() {
 
 
 /* ==========================================================
-   14. الحركات البصرية
+   14. Visual motion
    ----------------------------------------------------------
-   خاص بالنسخة الملوّنة. كل ما هنا تجميلي بحت، ولو عُطّل كليًا
-   لبقيت الأداة تعمل كما هي. ونحترم دائمًا تفضيل تقليل الحركة.
+   Everything in this section is purely decorative. If it were disabled
+   entirely the tool would still work exactly as before. The user's
+   reduced-motion preference is always respected.
    ========================================================== */
 
-/** هل طلبت المستخدمة من نظامها تقليل الحركة؟ */
+/** Has the user asked her system to reduce motion? */
 function reducedMotion() {
   return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-/** إشعار عائم قصير، بديل ودود عن alert */
+/** A short floating notice, a friendlier alternative to alert() */
 function showToast(message, kind) {
   const box = document.getElementById('toast');
   if (!box) return;
@@ -1534,7 +1589,7 @@ function showToast(message, kind) {
 }
 
 function initMotion() {
-  /* 14.1 ظهور العناصر تدريجيًا عند التمرير إليها */
+  /* 14.1 Reveal elements gradually as they scroll into view */
   const targets = document.querySelectorAll('.reveal');
   if (reducedMotion() || !('IntersectionObserver' in window)) {
     targets.forEach(el => el.classList.add('in'));
@@ -1543,13 +1598,13 @@ function initMotion() {
       entries.forEach(e => {
         if (!e.isIntersecting) return;
         e.target.classList.add('in');
-        obs.unobserve(e.target);   // مرة واحدة فقط، فلا نُتعب الصفحة
+        obs.unobserve(e.target);   // once only, so the page is not kept busy
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
     targets.forEach(el => io.observe(el));
   }
 
-  /* 14.2 ظل الترويسة حين ينزل التمرير */
+  /* 14.2 Header shadow once the page is scrolled */
   const header = document.querySelector('.header');
   if (header) {
     const onScroll = () => header.classList.toggle('is-stuck', window.scrollY > 8);
@@ -1557,7 +1612,7 @@ function initMotion() {
     onScroll();
   }
 
-  /* 14.3 عدّادات الأرقام تصعد إلى قيمتها */
+  /* 14.3 Number counters that climb to their value */
   const counters = document.querySelectorAll('[data-count]');
   const runCounter = el => {
     const target = parseInt(el.dataset.count, 10);
@@ -1583,10 +1638,10 @@ function initMotion() {
 
 
 /* ==========================================================
-   15. نقطة الدخول
+   15. Entry point
    ----------------------------------------------------------
-   ملف واحد يخدم أربع صفحات. نعرف أي صفحة نحن فيها من وجود
-   عناصرها، فلا نحتاج ملف جافاسكربت لكل صفحة.
+   One file serves all four pages. We detect which page we are on by
+   the presence of its elements, so no per-page script is needed.
    ========================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('dropzone'))    initHome();

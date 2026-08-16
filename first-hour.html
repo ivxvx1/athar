@@ -67,7 +67,7 @@
 
   <div class="container prose">
 
-    <!-- ===== القسم الأول: ما لا يجب فعله ===== -->
+    <!-- ===== Part one: what not to do ===== -->
     <h2 class="reveal"><svg class="ic"><use href="#i-alert"/></svg><span data-i18n="fh.s1">ما لا يجب فعله الآن</span></h2>
     <div class="dont-grid">
       <div class="dont reveal">
@@ -96,8 +96,8 @@
       </div>
     </div>
 
-    <!-- ===== القسم الثاني: قائمة الأدلة الناقصة ===== -->
-    <!-- القائمة بصرية بحتة. لا تُحفظ حالتها في أي مكان، وتعود فارغة بإعادة التحميل. -->
+    <!-- ===== Part two: checklist of missing evidence ===== -->
+    <!-- The checklist is purely visual. Its state is stored nowhere and resets on reload. -->
     <h2 class="reveal"><svg class="ic"><use href="#i-check"/></svg><span data-i18n="fh.s2">قائمة الأدلة الناقصة</span></h2>
     <p class="reveal" data-i18n="fh.s2p"></p>
     <ul class="checklist">
@@ -108,14 +108,15 @@
       <li class="reveal"><label><input type="checkbox"><span data-i18n="fh.c5"></span></label></li>
     </ul>
 
-    <!-- ===== القسم الثالث: المسار القانوني ===== -->
+    <!-- ===== Part three: the legal pathway ===== -->
     <!--
-      متروك عمدًا بلا محتوى. المحتوى القانوني قيد التحقق من مصادر رسمية عُمانية،
-      ولا يجوز كتابة أي جهة أو مادة قانونية من التخمين.
+      Deliberately left without hard-coded content. Legal material is never
+      written from guesswork; it is verified against official Omani sources
+      and then placed in legal-om.json.
     -->
     <h2 class="reveal"><svg class="ic"><use href="#i-scale"/></svg><span data-i18n="fh.s3">المسار القانوني</span></h2>
 
-    <!-- ملف المحتوى مذكور هنا لا في الكود، فتُضاف دولة أخرى بتغيير هذا السطر وحده -->
+    <!-- The content file is named here rather than in the code, so another country is added by changing this one line -->
     <div id="legalHolder" data-legal="legal-om.json"></div>
 
     <div class="legal-placeholder reveal" id="legalPlaceholder">
@@ -134,7 +135,7 @@
 
   </div>
 </main>
-<!-- ===== التذييل: بتصميم علامة «أثر»، في نهاية الصفحة وغير ثابت ===== -->
+<!-- ===== Footer: the Athar logo lockup, at the end of the page and never fixed ===== -->
 <footer class="footer">
   <div class="footer-brand">
     <img class="footer-mark" src="assets/logo.png" alt="أثر · احفظ الأثر قبل أن يزول" width="1672" height="941">

@@ -1,22 +1,29 @@
 /* ==========================================================
-   أثر | نصوص اللغتين ومنطق التبديل
+   ATHAR | Bilingual strings and the language switch
    ----------------------------------------------------------
-   كيف يعمل هذا الملف:
-   1. كائن STRINGS يحمل كل نص في الموقع بمفتاح واحد، بالعربية والإنجليزية.
-   2. كل عنصر في HTML يحمل data-i18n="المفتاح".
-   3. دالة setLang تمر على كل العناصر وتبدّل نصوصها.
+   How this file works:
+   1. The STRINGS object holds every piece of text on the site under a
+      single key, in Arabic and English.
+   2. Every element in the HTML carries data-i18n="key".
+   3. setLang() walks all of those elements and swaps their text.
 
-   قاعدتان لا تُكسران:
-   - العربية هي الافتراضية دائمًا، ولا نقرأ لغة المتصفح.
-   - اللغة المختارة لا تُحفظ في أي مكان. لا localStorage ولا كوكيز.
-     إعادة تحميل الصفحة تعيدها إلى العربية، وهذا مقصود.
+   Two rules that are never broken:
+   - Arabic is always the default. The browser language is never read.
+   - The chosen language is never persisted. No localStorage, no cookies.
+     Reloading the page returns it to Arabic, and that is deliberate:
+     the victim's device may be monitored, so no trace may survive.
+
+   SECURITY NOTE: every string in this file is authored here. None of it
+   comes from user input, which is why the small number of innerHTML
+   assignments in setLang() are safe. Anything the user types is rendered
+   with textContent or escaped explicitly in athar.js.
    ========================================================== */
 
 const STRINGS = {
 
-  /* ======================= العربية ======================= */
+  /* ======================= Arabic ======================= */
   ar: {
-    /* --- الهوية والتنقل --- */
+    /* --- Identity and navigation --- */
     'brand.name':      'أثر',
     'brand.tagline':   'احفظي الأثر قبل أن يزول',
     'nav.tool':        'توثيق ملف',
@@ -30,7 +37,7 @@ const STRINGS = {
     'foot.note':       'أثر · أداة حفظ وفرز أولي، وليست جهة تحقيق ولا مصدر استشارة قانونية.',
     'foot.local':      'كل ما يجري في هذه الصفحة يجري داخل متصفحك وحده.',
 
-    /* --- عناوين التبويبات، محايدة عمدًا --- */
+    /* --- Tab titles, deliberately neutral so a passer-by learns nothing --- */
     'title.home':      'أثر · توثيق ملف',
     'title.about':     'أثر · عن المنصة',
     'title.firstHour': 'أثر · الساعة الأولى',
@@ -40,7 +47,7 @@ const STRINGS = {
     'meta.firstHour':  'ما لا يجب فعله في الساعة الأولى، وقائمة الأدلة الناقصة.',
     'meta.verify':     'تحققي من أن ملفًا ما زال مطابقًا لبصمته الرقمية.',
 
-    /* --- الصفحة الرئيسية --- */
+    /* --- Home page --- */
     'home.title':      'أسقطي الملف هنا',
     'home.sub':        'لن يغادر جهازك. لا حساب ولا تسجيل.',
     'drop.main':       'اسحبي الملف إلى هنا',
@@ -50,7 +57,7 @@ const STRINGS = {
     'drop.busy':       'جارٍ حساب البصمة داخل متصفحك…',
     'drop.busyBig':    'الملف كبير، وقد يستغرق بضع ثوانٍ. لا تُغلقي الصفحة.',
 
-    /* --- الأخطاء --- */
+    /* --- Error messages: explain what happened and how to fix it --- */
     'error.title':     'تعذّر التوثيق',
     'error.noCrypto':  'متصفحك لا يتيح حساب البصمة في هذا الوضع. افتحي الموقع عبر رابط https بدل فتح الملف مباشرة من الجهاز، أو جرّبي متصفحًا حديثًا.',
     'error.read':      'تعذّرت قراءة الملف حتى نهايته. تأكدي أن الملف لم يُنقل أو يُحذف أثناء القراءة، ثم أعيدي إسقاطه.',
@@ -58,8 +65,8 @@ const STRINGS = {
     'error.zipLib':    'تعذّر تحميل أداة ضغط الملفات لأن الاتصال بالإنترنت انقطع. أعيدي تحميل الصفحة وأنتِ متصلة، ثم أعيدي إسقاط الملف.',
     'error.zipMake':   'تعذّر إنشاء الحزمة. الملف قد يكون أكبر من قدرة ذاكرة المتصفح. جرّبي متصفحًا على حاسوب بدل الهاتف.',
 
-    /* --- البصمة --- */
-    /* الفائدة أولًا، ثم الآلية، ثم المصطلح التقني آخرًا */
+    /* --- Fingerprint --- */
+    /* Benefit first, then the mechanism, then the technical term last */
     'hash.label':      'بصمة ملفك',
     'hash.caption':    'احتفظي بهذا السطر. هو ما يُثبت لاحقًا أن ملفك لم يتغيّر: لو حُسب مرة أخرى بعد شهر وتطابق، فالملف هو نفسه ولم يُمسّ.',
     'hash.tech':       'تقنيًا: خوارزمية SHA-256 تقرأ محتوى الملف وتُنتج هذه الخانات الـ64. تغيير أصغر شيء في الملف يقلبها بالكامل.',
@@ -67,7 +74,7 @@ const STRINGS = {
     'btn.copied':      'تم النسخ',
     'btn.copyFail':    'انسخيها يدويًا من السطر أعلاه',
 
-    /* --- الملف والخط الزمني --- */
+    /* --- File and timeline --- */
     'file.label':      'ملفك، ومتى وثّقتِه',
     'file.intro':      'هذه بطاقة ملفك: ما هو، ومتى وُثّق بالضبط. لحظة التوثيق هذه هي المرجع الذي يُقارَن به لاحقًا.',
     'f.ref':           'مرجع الحالة',
@@ -81,7 +88,7 @@ const STRINGS = {
     'note.deviceDate': '<strong>عن تاريخ الملف:</strong> مأخوذ من نظام التشغيل على جهازك، وهو قابل للتعديل، ويُعرض للاسترشاد لا للإثبات. أما لحظة التوثيق فمسجّلة الآن.',
     'note.imagesOnly': '<strong>ملاحظة:</strong> تم حفظ الملف وتوثيقه بالكامل. الفحص التقني المتعمق متاح حاليًا للصور فقط.',
 
-    /* --- المؤشرات التقنية للصور --- */
+    /* --- Descriptive technical indicators, images only --- */
     'tech.label':      'ماذا وجدنا مكتوبًا داخل الصورة',
     'tech.intro':      'كل صورة تحمل بداخلها معلومات كتبها الجهاز أو البرنامج الذي أنتجها. نقرأها ونعرضها كما هي، لأنها قد تفيد المحقق.',
     'tech.dims':       'أبعاد الصورة',
@@ -100,7 +107,7 @@ const STRINGS = {
     'tech.none':       'لم يُعثر على مؤشرات وصفية إضافية داخل هذا الملف.',
     'tech.disclaimer': 'هذه قراءة وصفية لما هو مكتوب داخل الملف نفسه. غياب بيانات EXIF أمر شائع جدًا، لأن تطبيقات المراسلة تزيلها عند الإرسال، وهو لا يعني شيئًا عن أصالة الصورة. أثر لا تصدر أي حكم على أصالة المحتوى.',
 
-    /* --- توثيق الحادثة --- */
+    /* --- Incident record --- */
     'ctx.label':       'توثيق الحادثة',
     'ctx.intro':       'كل الحقول اختيارية. ما تكتبينه يبقى في هذه الصفحة فقط، ويدخل في تقريرك.',
     'ctx.type':        'نوع الدليل',
@@ -127,7 +134,7 @@ const STRINGS = {
     'ctx.notePh':      'اكتبي ما تتذكرينه الآن. التفاصيل تُنسى بسرعة.',
     'ctx.privacy':     'هذه البيانات تبقى في ذاكرة المتصفح المؤقتة، ولا تُرسل ولا تُحفظ. إغلاق الصفحة يمحوها.',
 
-    /* --- الأزرار والتنبيهات --- */
+    /* --- Buttons and notices --- */
     'btn.report':      'إنشاء التقرير',
     'btn.reportBusy':  'جارٍ تجهيز الحزمة…',
     'btn.reportDone':  'تم تنزيل الحزمة',
@@ -136,14 +143,14 @@ const STRINGS = {
     'warn.download':   'حمّلي تقريرك قبل إغلاق الصفحة. لا شيء يُحفظ هنا.',
     'pkg.done':        '<strong>نزلت الحزمة.</strong> افتحيها وابدئي بملف <strong>START-HERE.html</strong>، فهو يشرح البقية بلغة بسيطة. ولطباعة تقرير PDF، افتحي <strong>report.html</strong> واضغطي زر الطباعة في أعلاه. احفظي نسخة من الحزمة في مكان آمن خارج الهاتف.',
 
-    /* --- حدود التقرير، نص مُلزم --- */
+    /* --- Limits of the report: binding wording, not to be reworded --- */
     'limits.proves':        'ما يثبته هذا التقرير',
     'limits.provesText':    'أن الملف كان موجودًا بهذه الحالة عند الطابع الزمني المسجل، وأن أي تعديل لاحق عليه سيغيّر بصمته الرقمية.',
     'limits.notProves':     'ما لا يثبته',
     'limits.notProvesText': 'هوية منشئ الملف، ولا تاريخ إنشائه الأصلي، ولا صدق محتواه، ولا أصالة ما يعرضه. تقدير ذلك من اختصاص الجهات الرسمية وحدها.',
     'limits.disclaimer':    'أثر أداة حفظ وفرز أولي، وليست جهة تحقيق ولا مصدر استشارة قانونية.',
 
-    /* --- وحدات القياس والوقت --- */
+    /* --- Units of size and time --- */
     'u.bytes':    'بايت',
     'u.kb':       'كيلوبايت',
     'u.mb':       'ميجابايت',
@@ -155,7 +162,7 @@ const STRINGS = {
     'u.and':      'و',
     'u.future':   'تاريخ الملف على الجهاز لاحق للحظة التوثيق',
 
-    /* --- صفحة «عن المنصة» --- */
+    /* --- About page --- */
     'about.h1':    'عن المنصة',
     'about.sub':   'أثر تحفظ الدليل. لا تحكم عليه، ولا تبحث عن صاحبه.',
     'about.s1':    'لماذا هذه المنصة',
@@ -196,7 +203,7 @@ const STRINGS = {
     'about.s5p2':  'المنصة ملفات ثابتة بلا خادم ولا قاعدة بيانات ولا اشتراكات، فتكلفة تشغيلها قريبة من الصفر وتستطيع البقاء عاملة دون تمويل. والمسار القانوني مفصول في ملف بيانات مستقل، ما يعني أن إضافة أي دولة عربية تتم بتحرير ملف نصي دون تعديل سطر برمجي واحد.',
     'about.s5p3':  'يمكنك التحقق من كل ما سبق بنفسك: افتحي أدوات المطور في متصفحك، وراقبي تبويب الشبكة أثناء إسقاط ملف. لن ترى أي طلب يحمل ملفك إلى أي مكان.',
 
-    /* --- صفحة الساعة الأولى --- */
+    /* --- First-hour page --- */
     'fh.h1':       'الساعة الأولى',
     'fh.sub':      'أخطر ما يُفقد من الأدلة، يُفقد في أول ستين دقيقة. اقرئي هذه الصفحة قبل أن تفعلي أي شيء آخر.',
     'fh.s1':       'ما لا يجب فعله الآن',
@@ -227,7 +234,7 @@ const STRINGS = {
     'fh.legalErr': 'تعذّر قراءة ملف المحتوى القانوني. إن كنتِ تفتحين الموقع من ملف محلي، فالمتصفح يمنع قراءة الملفات المجاورة لأسباب أمنية. افتحيه عبر رابط https.',
     'fh.legalUpd': 'آخر مراجعة',
 
-    /* --- صفحة التحقق --- */
+    /* --- Verify page --- */
     'vf.h1':       'التحقق من بصمة',
     'vf.sub':      'أسقطي ملفًا لتعرفي بصمته الآن، أو الصقي بصمة معلومة لمطابقتها بالملف.',
     'vf.step1':    'البصمة المعروفة، اختيارية',
@@ -249,7 +256,7 @@ const STRINGS = {
     'vf.note':     'المقارنة تتم داخل متصفحك، ولا تُحفظ البصمة المُدخلة ولا الملف في أي مكان.',
     'vf.reset':    'ابدئي من جديد',
 
-    /* ===== نصوص خاصة بالنسخة الملوّنة ===== */
+    /* ===== Strings specific to this edition ===== */
     'hero.badge':   'يعمل داخل متصفحك · لا يُرفع أي ملف',
     'hero.cta1':    'كيف تعمل أثر؟',
     'hero.cta2':    'عندي بصمة وأريد مطابقتها',
@@ -288,7 +295,7 @@ const STRINGS = {
     'toast.copied': 'نُسخت البصمة',
     'toast.pkg':    'نزلت حزمة الأدلة',
 
-    /* ===== دليل الحزمة START-HERE.html، وأزرار الطباعة ===== */
+    /* ===== The START-HERE.html guide, and the print buttons ===== */
     'sh.title':     'حزمة أدلتك',
     'sh.sub':       'اقرئي هذه الصفحة أولًا. تشرح ما بداخل الحزمة، وماذا تفعلين بها.',
     'sh.printBtn':  'طباعة هذه الصفحة أو حفظها PDF',
@@ -315,13 +322,13 @@ const STRINGS = {
     'sh.reminder':  'المسار القانوني، أي الجهة التي تتلقى البلاغ وطريقة التقديم، قيد التحقق من مصادر رسمية ولم يُنشر بعد. لا تعتمدي فيه على هذه الصفحة.',
     'sh.langNote':  'هذه الصفحة مكتوبة بلغة الواجهة وقت إنشاء الحزمة. أما report.html فيحمل اللغتين معًا دائمًا، لأنه هو المعدّ للتسليم.',
 
-    /* ===== زر حفظ PDF على الموقع ===== */
+    /* ===== The save-as-PDF button on the site ===== */
     'btn.pdf':      'حفظ التقرير PDF',
     'btn.pdfBusy':  'جارٍ فتح نافذة الطباعة…',
     'btn.pdfHint':  'ورقة واحدة للطباعة أو للحفظ PDF. اختاري «حفظ كـ PDF» بدل اسم الطابعة.',
     'btn.reportHint': 'كل شيء في ملف واحد: دليلك كما هو، وتقرير مطبوع، وبصمتك، وسجل بما حدث ومتى. هذا ما تسلّمينه للجهة المختصة.',
 
-    /* ===== لماذا نوثّق أصلًا، ما دام رقم البلاغ موجودًا ===== */
+    /* ===== Why document at all, when a reporting number exists ===== */
     'why.eyebrow':  'سؤال يستحق الجواب',
     'why.h2':       'أليس يكفي أن أتصل بالشرطة مباشرة؟',
     'why.intro':    'الاتصال بالشرطة هو الخطوة الحاسمة، ولا شيء يُغني عنه. لكن بين لحظة وصول التهديد ولحظة وصولك إلى الجهة المختصة تمر ساعات أو أيام، وفي تلك الفجوة يُفقد الدليل. أثر تعمل في هذه الفجوة وحدها.',
@@ -345,7 +352,7 @@ const STRINGS = {
     'why.r4':       '<strong>جاهز للملف الورقي.</strong> ثنائي اللغة وقابل للطباعة بضغطة واحدة، فيدخل ملف القضية مباشرة بلا إعادة كتابة ولا ترجمة.',
     'why.pull':     'أثر ليست بديلًا عن البلاغ. هي ما يجعل بلاغك مُجديًا حين تتصلين.',
 
-    /* ===== شرح صفحة التحقق، على شكل قائمة تنفتح بالضغط ===== */
+    /* ===== Verify-page explainer, as a click-to-open list ===== */
     'vfx.eyebrow':  'قبل أن تسألي',
     'vfx.h2':       'ما فائدة التحقق من البصمة؟',
     'vfx.lead':     'اضغطي على أي سؤال ليفتح جوابه.',
@@ -384,7 +391,7 @@ const STRINGS = {
     'vfx.q6':       'هل يُحفظ الملف أو البصمة هنا؟',
     'vfx.a6':       'لا. الملف يُقرأ داخل متصفحك ولا يُرفع إلى أي مكان، والبصمة التي تلصقينها لا تُخزَّن ولا تُرسَل. إعادة تحميل الصفحة تمحو كل شيء. تستطيعين التأكد بنفسك: افتحي أدوات المطور، وراقبي تبويب الشبكة أثناء إسقاط الملف.',
 
-    /* ===== أسئلة سريعة: ما يخطر ببال المستخدمة قبل أن تلمس الأداة ===== */
+    /* ===== Quick questions: what crosses her mind before she touches the tool ===== */
     'brand.simple': 'هدفها بسيط: أن يبقى ما لديك اليوم قابلًا للتحقق عندما تحتاجينه لاحقًا.',
     'faq.eyebrow':  'قبل أن تبدئي',
     'faq.h2':       'أسئلة سريعة، أجوبتها قصيرة',
@@ -403,7 +410,7 @@ const STRINGS = {
     'faq.q6':       'وماذا أحصل عليه في النهاية؟',
     'faq.a6':       'ملف واحد تنزّلينه على جهازك، بداخله: <strong>دليلك الأصلي</strong> كما هو دون تعديل، و<strong>تقرير مطبوع</strong> بالعربية والإنجليزية، و<strong>بصمة</strong> تُثبت أن الملف لم يتغيّر، و<strong>سجل</strong> بما حدث ومتى. تحتفظين به وتقدّمينه عند الحاجة.',
 
-    /* ===== الرسم التوضيحي: اليوم وبعد شهر ===== */
+    /* ===== The explanatory diagram: today and a month later ===== */
     'flow.h':       'كيف تعمل البصمة، في صورة واحدة',
     'flow.today':   'اليوم',
     'flow.f1':      'ملفك',
@@ -414,7 +421,7 @@ const STRINGS = {
     'flow.match':   'البصمتان متطابقتان، إذًا الملف لم يتغيّر',
     'flow.note':    'ولو تغيّر في الملف أصغر شيء، لاختلفت البصمتان وانكشف الأمر فورًا.',
 
-    /* ===== شرح البصمة ببساطة، في صفحة عن المنصة ===== */
+    /* ===== Plain-language explanation of the fingerprint, on the About page ===== */
     'hash.eyebrow': 'بلغة بسيطة',
     'hash.h2':      'ما هي «البصمة الرقمية»؟',
     'hash.p1':      'تخيّلي أن ملفك مرّ في آلة تقرأ محتواه كله، بايتًا بايتًا، ثم تُخرج سطرًا من 64 خانة. هذا السطر هو بصمة الملف. لا يشبه أي ملف آخر في العالم، تمامًا كبصمة الإصبع.',
@@ -428,13 +435,13 @@ const STRINGS = {
     'hash.a3':      'لا، وهذا فرق مهم. التشفير يُخفي الملف ثم يُعيده كما كان بالمفتاح الصحيح. أما البصمة فطريق واحد لا رجعة فيه: تُحسب من الملف، ولا يُستخرج الملف منها أبدًا. اسمها التقني «دالة تجزئة»، ونوعها هنا SHA-256.',
     'hash.warn':    '<strong>وما لا تفعله البصمة:</strong> لا تخبر أحدًا من صنع الملف، ولا متى صُنع أصلًا، ولا إن كان ما فيه صحيحًا. هي تثبت أن الملف لم يتغيّر منذ وثّقتِه، لا أكثر ولا أقل.',
 
-    /* ===== التبليغ، بطاقة في صفحة عن المنصة ===== */
+    /* ===== Reporting card on the About page ===== */
     'rep.h2':       'إن قررتِ التبليغ',
     'rep.p':        'الأرقام الرسمية وطريقة التبليغ وما تأخذينه معك، كلها في صفحة الساعة الأولى.',
     'rep.btn':      'أرقام التبليغ الرسمية',
     'rep.quick':    'بلاغات الابتزاز والجرائم الإلكترونية · شرطة عُمان السلطانية',
 
-    /* ===== التذييل ===== */
+    /* ===== Footer ===== */
     'foot.rights':  'أثر · مشروع من سلطنة عُمان',
     'foot.desc':    'منصة لحفظ الأدلة الرقمية في جرائم الابتزاز والتشهير',
     'foot.contact': 'للتواصل مع فريق أثر',
@@ -870,37 +877,40 @@ const STRINGS = {
   }
 };
 
-/* ---------- اللغة الحالية ----------
-   متغيّر في الذاكرة فقط. إعادة تحميل الصفحة تعيده إلى 'ar'. */
+/* ---------- Current language ----------
+   An in-memory variable only. Reloading the page resets it to 'ar'. */
 let CURRENT_LANG = 'ar';
 
-/* ---------- t: جلب نص بمفتاحه ---------- */
+/* ---------- t: look up a string by key ---------- */
 function t(key) {
   const table = STRINGS[CURRENT_LANG] || STRINGS.ar;
-  // إن غاب المفتاح، نُظهره كما هو بدل نص فارغ، حتى ينكشف الخطأ فورًا أثناء التطوير
+  // If a key is missing, show the key itself rather than an empty string,
+  // so the mistake surfaces immediately during development
   return (key in table) ? table[key] : key;
 }
 
-/* ---------- setLang: تبديل اللغة ---------- */
+/* ---------- setLang: switch the interface language ---------- */
 function setLang(lang) {
   CURRENT_LANG = (lang === 'en') ? 'en' : 'ar';
 
-  // اتجاه الصفحة ولغتها. الخصائص المنطقية في CSS تقلب التخطيط وحدها بعد هذا السطر.
+  // Page direction and language. The logical CSS properties flip the whole
+  // layout by themselves once these two lines run.
   document.documentElement.lang = CURRENT_LANG;
   document.documentElement.dir  = CURRENT_LANG === 'ar' ? 'rtl' : 'ltr';
 
-  // 1. النصوص العادية
+  // 1. Plain text nodes
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.dataset.i18n);
   });
 
-  // 2. النصوص التي تحتوي وسوم تنسيق مثل <strong>
-  //    كل هذه النصوص مكتوبة داخل هذا الملف، ولا تأتي من إدخال المستخدمة إطلاقًا.
+  // 2. Strings that contain formatting tags such as <strong>.
+  //    Every one of these is authored in this file and none of it ever
+  //    comes from user input, which is what makes innerHTML safe here.
   document.querySelectorAll('[data-i18n-html]').forEach(el => {
     el.innerHTML = t(el.dataset.i18nHtml);
   });
 
-  // 3. الخصائص: النص البديل، والتلميح، والوصف لقارئات الشاشة
+  // 3. Attributes: placeholder, aria-label and meta content
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
   });
@@ -911,19 +921,19 @@ function setLang(lang) {
     el.setAttribute('content', t(el.dataset.i18nContent));
   });
 
-  // 4. زر التبديل نفسه
+  // 4. The switch button itself
   const btn = document.getElementById('langBtn');
   if (btn) {
     btn.textContent = t('lang.toggle');
     btn.setAttribute('aria-label', t('lang.aria'));
   }
 
-  // 5. إشعار بقية الصفحة، لتعيد رسم ما تولّده بالجافاسكربت
-  //    مثل التواريخ والأحجام التي تُنسّق حسب اللغة
+  // 5. Tell the rest of the page to re-render whatever it generates in
+  //    JavaScript, such as dates and sizes that are formatted per language
   document.dispatchEvent(new CustomEvent('athar:langchange', { detail: { lang: CURRENT_LANG } }));
 }
 
-/* ---------- التهيئة عند فتح الصفحة ---------- */
+/* ---------- Initialisation on page load ---------- */
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('langBtn');
   if (btn) {
@@ -931,6 +941,6 @@ document.addEventListener('DOMContentLoaded', () => {
       setLang(CURRENT_LANG === 'ar' ? 'en' : 'ar');
     });
   }
-  // العربية دائمًا هي نقطة البداية، ولا نقرأ navigator.language
+  // Arabic is always the starting point; navigator.language is never read
   setLang('ar');
 });

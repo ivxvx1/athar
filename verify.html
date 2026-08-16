@@ -59,7 +59,7 @@
         <h1 data-i18n="vf.h1">التحقق من بصمة</h1>
         <p class="lead" data-i18n="vf.sub"></p>
 
-        <!-- الخطوة الأولى: البصمة المعروفة، اختيارية -->
+        <!-- Step one: the known fingerprint, optional -->
         <div class="tool-card">
           <div class="card-title"><svg class="ic"><use href="#i-paste"/></svg><span data-i18n="vf.step1">البصمة المعروفة، اختيارية</span></div>
           <p class="card-intro" data-i18n="vf.step1p"></p>
@@ -70,7 +70,7 @@
                    data-i18n-placeholder="vf.ph" placeholder="الصقي 64 خانة هنا">
           </div>
 
-          <!-- الخطوة الثانية: الملف -->
+          <!-- Step two: the file -->
           <div class="dropzone dropzone--small" id="vDropzone" tabindex="0" role="button"
                data-i18n-aria="drop.aria" aria-label="اختاري ملفًا للتحقق">
             <div class="dropzone-body">
@@ -93,13 +93,13 @@
 
   <div class="container">
 
-    <!-- ===== رسالة الخطأ ===== -->
+    <!-- ===== Error message ===== -->
     <div class="card hidden" id="vErrorCard" role="alert">
       <div class="card-title"><svg class="ic"><use href="#i-alert"/></svg><span data-i18n="error.title">تعذّر التوثيق</span></div>
       <p id="vErrorText"></p>
     </div>
 
-    <!-- ===== النتيجة ===== -->
+    <!-- ===== Verdict ===== -->
     <div class="verdict" id="verdict" role="status" aria-live="polite">
       <svg class="verdict-icon hidden" id="vIconMatch" viewBox="0 0 24 24" fill="none"
            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -119,7 +119,7 @@
       </div>
     </div>
 
-    <!-- ===== التفاصيل ===== -->
+    <!-- ===== Details ===== -->
     <section class="card result-card hidden" id="vDetails">
       <div class="card-title"><svg class="ic"><use href="#i-grid"/></svg><span data-i18n="hash.label">البصمة الرقمية · SHA-256</span></div>
       <div class="hash-wrap">
@@ -139,8 +139,9 @@
     </section>
 
 
-    <!-- ===== شرح مبسّط: قائمة تُفتح بالضغط. عناصر details أصلية في HTML،
-         فتعمل بلا جافاسكربت، ويُوصل إليها بمفتاح Tab. ===== -->
+    <!-- ===== Plain explainer as a click-to-open list. These are native HTML
+         <details> elements, so they work with no JavaScript and are
+         reachable with the Tab key. ===== -->
     <section class="section">
       <div class="section-head reveal">
         <span class="eyebrow" data-i18n="vfx.eyebrow">قبل أن تسألي</span>
@@ -212,7 +213,7 @@
 
   </div>
 </main>
-<!-- ===== التذييل: بتصميم علامة «أثر»، في نهاية الصفحة وغير ثابت ===== -->
+<!-- ===== Footer: the Athar logo lockup, at the end of the page and never fixed ===== -->
 <footer class="footer">
   <div class="footer-brand">
     <img class="footer-mark" src="assets/logo.png" alt="أثر · احفظ الأثر قبل أن يزول" width="1672" height="941">

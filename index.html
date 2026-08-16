@@ -17,12 +17,12 @@
 
 <a class="skip-link" href="#tool" data-i18n="skip">تخطّي إلى المحتوى</a>
 
-<!-- كتل لونية تسبح ببطء في الخلفية -->
+<!-- Soft colour blobs drifting slowly in the background -->
 <div class="blobs" aria-hidden="true">
   <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
 </div>
 
-<!-- ===== مكتبة الأيقونات، مرسومة داخل الصفحة فلا تحتاج أي مصدر خارجي ===== -->
+<!-- ===== Icon library, drawn inline so no external source is needed ===== -->
 <svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.7V20a1 1 0 0 0 1 1H10v-6h4v6h3.5a1 1 0 0 0 1-1V9.7"/></symbol>
   <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
@@ -53,7 +53,7 @@
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3.2 9.5h17.6M3.2 14.5h17.6"/><path d="M12 3c2.4 2.6 3.6 5.7 3.6 9S14.4 18.4 12 21C9.6 18.4 8.4 15.3 8.4 12S9.6 5.6 12 3z"/></symbol>
 </svg>
 
-<!-- ===== الترويسة ===== -->
+<!-- ===== Header ===== -->
 <header class="header">
   <div class="header-inner">
     <a class="brand" href="index.html"><img class="brand-mark" src="assets/logo.png" alt="أثر" width="1672" height="941"></a>
@@ -69,7 +69,7 @@
 
 <main>
 
-  <!-- ===== البطل، والأداة بداخله مباشرة ===== -->
+  <!-- ===== Hero, with the tool inside it ===== -->
   <section class="hero container" id="tool">
     <div class="hero-grid">
 
@@ -78,7 +78,7 @@
         <h1><span data-i18n="home.title">أسقطي الملف هنا</span></h1>
         <p class="lead" data-i18n="home.sub">لن يغادر جهازك. لا حساب ولا تسجيل.</p>
 
-        <!-- منطقة الإسقاط: تقبل كل أنواع الملفات، فلا accept على الحقل -->
+        <!-- Drop zone: accepts every file type, so the input carries no accept attribute -->
         <div class="tool-card">
           <div class="dropzone" id="dropzone" tabindex="0" role="button"
                data-i18n-aria="drop.aria" aria-label="اختاري ملفًا لتوثيقه">
@@ -109,7 +109,7 @@
 
     </div>
 
-    <!-- شريط الأرقام -->
+    <!-- Statistics strip -->
     <div class="stats">
       <div class="stat reveal"><div class="num" data-count="64">64</div><div class="lbl" data-i18n="stat1">خانة تُحسب من محتوى ملفك</div></div>
       <div class="stat reveal d1"><div class="num" data-count="0">0</div><div class="lbl" data-i18n="stat2">ملف يُرفع إلى أي خادم</div></div>
@@ -119,16 +119,16 @@
 
   <div class="container">
 
-    <!-- ===== رسالة الخطأ ===== -->
+    <!-- ===== Error message ===== -->
     <div class="card hidden" id="errorCard" role="alert">
       <div class="card-title"><svg class="ic"><use href="#i-alert"/></svg><span data-i18n="error.title">تعذّر التوثيق</span></div>
       <p id="errorText"></p>
     </div>
 
-    <!-- ===== النتائج، مخفية حتى يُسقط ملف ===== -->
+    <!-- ===== Results, hidden until a file is dropped ===== -->
     <div id="results" class="hidden section" aria-live="polite">
 
-      <!-- البصمة -->
+      <!-- Fingerprint -->
       <section class="card result-card" id="hashCard">
         <div class="card-title"><svg class="ic"><use href="#i-grid"/></svg><span data-i18n="hash.label">البصمة الرقمية · SHA-256</span></div>
         <div class="hash-wrap">
@@ -142,7 +142,7 @@
         </div>
       </section>
 
-      <!-- الملف والخط الزمني -->
+      <!-- File and timeline -->
       <section class="card result-card accent">
         <div class="card-title"><svg class="ic"><use href="#i-clock"/></svg><span data-i18n="file.label">ملفك، ومتى وثّقتِه</span></div>
         <p class="card-intro" data-i18n="file.intro"></p>
@@ -161,7 +161,7 @@
         <div class="note info hidden" id="layerNote" data-i18n-html="note.imagesOnly"></div>
       </section>
 
-      <!-- المؤشرات التقنية الوصفية، للصور فقط -->
+      <!-- Descriptive technical indicators, images only -->
       <section class="card result-card violet hidden" id="techCard">
         <div class="card-title"><svg class="ic"><use href="#i-camera"/></svg><span data-i18n="tech.label">ماذا وجدنا مكتوبًا داخل الصورة</span></div>
         <p class="card-intro" data-i18n="tech.intro"></p>
@@ -169,7 +169,7 @@
         <div class="note info" data-i18n="tech.disclaimer"></div>
       </section>
 
-      <!-- توثيق الحادثة -->
+      <!-- Incident record -->
       <section class="card result-card">
         <div class="card-title"><svg class="ic"><use href="#i-file"/></svg><span data-i18n="ctx.label">توثيق الحادثة</span></div>
         <p class="card-intro" data-i18n="ctx.intro">كل الحقول اختيارية. ما تكتبينه يبقى في هذه الصفحة فقط، ويدخل في تقريرك.</p>
@@ -222,9 +222,9 @@
         <p class="actions-note" data-i18n="ctx.privacy"></p>
       </section>
 
-      <!-- الأزرار -->
+      <!-- Buttons -->
       <section class="card result-card accent">
-        <!-- طريقان للحصول على تقريرك: حزمة كاملة للتسليم، أو ورقة PDF للطباعة -->
+        <!-- Two routes to the report: the full package for hand-over, or a printable PDF sheet -->
         <div class="btn-row">
           <div class="btn-choice">
             <button class="btn primary" id="reportBtn" type="button">
@@ -246,7 +246,7 @@
         </div>
       </section>
 
-      <!-- حدود التقرير، معروضة قبل التسليم لا بعده -->
+      <!-- Limits of the report, shown before hand-over rather than after -->
       <div class="two-col">
         <div class="col-box">
           <h4><svg class="ic"><use href="#i-check"/></svg><span data-i18n="limits.proves">ما يثبته هذا التقرير</span></h4>
@@ -260,8 +260,8 @@
 
     </div>
 
-    <!-- ===== أسئلة سريعة: أول ما يخطر ببال المستخدمة، وأجوبتها كلها «لا» =====
-         نفس عناصر details المستعملة في صفحة التحقق، فلا تحتاج جافاسكربت. -->
+    <!-- ===== Quick questions: the first things she wonders, and the answers are all "no" =====
+         Same native <details> elements used on the verify page, so no JavaScript is required. -->
     <section class="section">
       <div class="section-head reveal">
         <span class="eyebrow" data-i18n="faq.eyebrow">قبل أن تبدئي</span>
@@ -302,7 +302,7 @@
       </div>
     </section>
 
-    <!-- ===== المزايا ===== -->
+    <!-- ===== Features ===== -->
     <section class="section">
       <div class="section-head reveal">
         <span class="eyebrow" data-i18n="feat.eyebrow">لماذا أثر</span>
@@ -337,7 +337,7 @@
       </div>
     </section>
 
-    <!-- ===== الخطوات ===== -->
+    <!-- ===== Steps ===== -->
     <section class="section">
       <div class="section-head reveal">
         <span class="eyebrow" data-i18n="steps.eyebrow">خمس خطوات</span>
@@ -355,7 +355,7 @@
 
   </div>
 </main>
-<!-- ===== التذييل: بتصميم علامة «أثر»، في نهاية الصفحة وغير ثابت ===== -->
+<!-- ===== Footer: the Athar logo lockup, at the end of the page and never fixed ===== -->
 <footer class="footer">
   <div class="footer-brand">
     <img class="footer-mark" src="assets/logo.png" alt="أثر · احفظ الأثر قبل أن يزول" width="1672" height="941">
@@ -383,13 +383,15 @@
 </footer>
 
 
-<!-- ===== التذييل ===== -->
+<!-- ===== Footer ===== -->
 
 
 
 <!--
-  المكتبة الخارجية الوحيدة في المشروع، لإنشاء الحزمة المضغوطة داخل المتصفح.
-  خاصية integrity تجعل المتصفح يرفض تشغيلها إن تغيّرت ولو ببايت على الخادم البعيد.
+  The only external library in the project, used to build the ZIP inside the
+  browser. The integrity attribute makes the browser refuse to run it if even
+  one byte has changed on the remote CDN, which closes off supply-chain
+  tampering.
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
         integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG"

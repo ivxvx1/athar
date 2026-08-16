@@ -1,7 +1,43 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
   Referrer-Policy: no-referrer
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Cross-Origin-Opener-Policy: same-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+
+# ---------------------------------------------------------------------------
+# Why each directive is here
+#
+# connect-src 'self'
+#   The most important line in this file. The browser itself refuses any
+#   request to an external host, so the user's file cannot be exfiltrated
+#   even if the page were compromised. This is the project's core promise,
+#   enforced by the browser rather than merely promised by us.
+#
+# script-src 'self' + cdnjs
+#   No inline scripts anywhere. JSZip is pinned with a Subresource Integrity
+#   hash, so a tampered copy on the CDN would be rejected outright.
+#
+# style-src ... 'unsafe-inline'
+#   Required. The generated report is a self-contained document with an
+#   embedded <style> block, rendered inside a same-origin iframe that
+#   inherits this policy. Without 'unsafe-inline' the printed PDF comes out
+#   completely unstyled. Inline styles cannot execute code, and every value
+#   that reaches the report passes through escapeHtml(), so the residual
+#   risk here is negligible.
+#
+# form-action 'none'
+#   The site has no forms that submit anywhere. This blocks any injected one.
+#
+# frame-ancestors 'none' / X-Frame-Options
+#   The site cannot be embedded in another page, which rules out clickjacking.
+#
+# Referrer-Policy: no-referrer
+#   Outbound links (WhatsApp, official sources) carry no information about
+#   which page the user came from.
+#
+# Permissions-Policy
+#   Camera, microphone, location and payment are switched off. The tool
+#   never needs them.
+# ---------------------------------------------------------------------------
